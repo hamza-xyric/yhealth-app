@@ -1,0 +1,702 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  user
+  admin
+  moderator
+  doctor
+  patient
+}
+
+enum Gender {
+  male
+  female
+  non_binary
+  prefer_not_to_say
+}
+
+enum AuthProvider {
+  local
+  google
+  apple
+}
+
+enum OnboardingStatus {
+  registered
+  consent_pending
+  assessment_pending
+  goals_pending
+  integrations_pending
+  preferences_pending
+  plan_pending
+  completed
+}
+
+enum ConsentType {
+  terms_of_service
+  privacy_policy
+  email_marketing
+  whatsapp_coaching
+}
+
+enum NotificationChannel {
+  push
+  email
+  whatsapp
+  sms
+}
+
+enum CoachingStyle {
+  supportive
+  direct
+  analytical
+  motivational
+}
+
+enum CoachingIntensity {
+  light
+  moderate
+  intensive
+}
+
+enum GoalCategory {
+  weight_loss
+  muscle_building
+  sleep_improvement
+  stress_wellness
+  energy_productivity
+  event_training
+  health_condition
+  habit_building
+  overall_optimization
+  custom
+}
+
+enum HealthPillar {
+  fitness
+  nutrition
+  wellbeing
+}
+
+enum GoalStatus {
+  draft
+  active
+  paused
+  completed
+  abandoned
+}
+
+enum AssessmentType {
+  quick
+  deep
+}
+
+enum QuestionType {
+  single_select
+  multi_select
+  slider
+  emoji_scale
+  number_input
+  date_picker
+  text_input
+}
+
+enum IntegrationProvider {
+  whoop
+  apple_health
+  fitbit
+  garmin
+  oura
+  samsung_health
+  myfitnesspal
+  nutritionix
+  cronometer
+  strava
+}
+
+enum SyncStatus {
+  active
+  paused
+  error
+  disconnected
+  pending
+}
+
+enum DataType {
+  heart_rate
+  hrv
+  sleep
+  steps
+  workouts
+  calories
+  nutrition
+  strain
+  recovery
+  body_temp
+  vo2_max
+  training_load
+  gps_activities
+}
+
+enum PlanStatus {
+  draft
+  active
+  paused
+  completed
+  archived
+}
+
+enum ActivityType {
+  workout
+  meal
+  sleep_routine
+  mindfulness
+  habit
+  check_in
+  reflection
+  learning
+}
+
+enum DayOfWeek {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+  sunday
+}
+
+enum ActivityLogStatus {
+  pending
+  completed
+  skipped
+  partial
+}
+
+// ============================================
+// USER & AUTH MODELS
+// ============================================
+
+model User {
+  id                       String           @id @default(uuid())
+  email                    String           @unique @db.VarChar(255)
+  password                 String?          @db.VarChar(255)
+  firstName                String           @db.VarChar(50)
+  lastName                 String           @db.VarChar(50)
+  dateOfBirth              DateTime         @db.Date
+  gender                   Gender
+  role                     UserRole         @default(user)
+  isActive                 Boolean          @default(true)
+  isEmailVerified          Boolean          @default(false)
+  avatar                   String?          @db.VarChar(500)
+  phone                    String?          @db.VarChar(20)
+
+  // Auth provider
+  authProvider             AuthProvider     @default(local)
+
+  // Onboarding
+  onboardingStatus         OnboardingStatus @default(registered)
+  onboardingCompletedAt    DateTime?
+
+  // Security tokens
+  lastLogin                DateTime?
+  refreshToken             String?          @db.Text
+  passwordResetToken       String?          @db.VarChar(255)
+  passwordResetExpires     DateTime?
+  emailVerificationToken   String?          @db.VarChar(255)
+  emailVerificationExpires DateTime?
+  phoneVerificationCode    String?          @db.VarChar(10)
+  phoneVerificationExpires DateTime?
+
+  // Timestamps
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+
+  // Relations
+  socialProfiles           SocialProfile[]
+  consents                 ConsentRecord[]
+  whatsApp                 WhatsAppEnrollment?
+  preferences              UserPreferences?
+  goals                    UserGoal[]
+  assessmentResponses      AssessmentResponse[]
+  integrations             UserIntegration[]
+  syncLogs                 SyncLog[]
+  healthDataRecords        HealthDataRecord[]
+  plans                    UserPlan[]
+  activityLogs             ActivityLog[]
+
+  // Indexes for performance
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt(sort: Desc)])
+  @@index([onboardingStatus])
+  @@index([email])
+  @@map("users")
+}
+
+model SocialProfile {
+  id           String       @id @default(uuid())
+  userId       String
+  provider     AuthProvider
+  providerId   String       @db.VarChar(255)
+  email        String?      @db.VarChar(255)
+  name         String?      @db.VarChar(100)
+  avatar       String?      @db.VarChar(500)
+  accessToken  String?      @db.Text
+  refreshToken String?      @db.Text
+  tokenExpiry  DateTime?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("social_profiles")
+}
+
+model ConsentRecord {
+  id          String      @id @default(uuid())
+  userId      String
+  type        ConsentType
+  version     String      @db.VarChar(20)
+  consentedAt DateTime    @default(now())
+  ip          String?     @db.VarChar(45)
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("consent_records")
+}
+
+model WhatsAppEnrollment {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  phoneNumber String   @db.VarChar(20)
+  countryCode String   @db.VarChar(5)
+  isVerified  Boolean  @default(false)
+  verifiedAt  DateTime?
+  consentedAt DateTime?
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phoneNumber])
+  @@map("whatsapp_enrollments")
+}
+
+// ============================================
+// USER PREFERENCES
+// ============================================
+
+model UserPreferences {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  // Notification Preferences (stored as JSON for flexibility)
+  notificationChannels Json @default("{\"push\": true, \"email\": true, \"whatsapp\": false, \"sms\": false}")
+  notificationTypes    Json @default("{}")
+  quietHoursEnabled    Boolean @default(true)
+  quietHoursStart      String  @default("22:00") @db.VarChar(5)
+  quietHoursEnd        String  @default("07:00") @db.VarChar(5)
+  timezone             String  @default("UTC") @db.VarChar(50)
+  maxNotificationsDay  Int     @default(10)
+  maxNotificationsWeek Int     @default(50)
+
+  // Coaching Preferences
+  coachingStyle          CoachingStyle     @default(supportive)
+  coachingIntensity      CoachingIntensity @default(moderate)
+  preferredChannel       NotificationChannel @default(push)
+  checkInFrequency       String            @default("daily") @db.VarChar(20)
+  preferredCheckInTime   String            @default("09:00") @db.VarChar(5)
+
+  // AI Personality
+  aiUseEmojis            Boolean @default(true)
+  aiFormalityLevel       String  @default("balanced") @db.VarChar(20)
+  aiEncouragementLevel   String  @default("medium") @db.VarChar(20)
+  focusAreas             String[] @default([])
+
+  // Display Preferences
+  weightUnit             String  @default("kg") @db.VarChar(10)
+  heightUnit             String  @default("cm") @db.VarChar(10)
+  distanceUnit           String  @default("km") @db.VarChar(10)
+  temperatureUnit        String  @default("celsius") @db.VarChar(15)
+  dateFormat             String  @default("YYYY-MM-DD") @db.VarChar(15)
+  timeFormat             String  @default("24h") @db.VarChar(5)
+  language               String  @default("en") @db.VarChar(10)
+  theme                  String  @default("system") @db.VarChar(10)
+
+  // Privacy Preferences
+  shareProgressWithCoach       Boolean @default(true)
+  allowAnonymousDataResearch   Boolean @default(false)
+  showInLeaderboards           Boolean @default(false)
+  profileVisibility            String  @default("private") @db.VarChar(10)
+
+  // Integration Preferences
+  autoSyncEnabled              Boolean @default(true)
+  syncOnWifiOnly               Boolean @default(false)
+  backgroundSyncEnabled        Boolean @default(true)
+  dataRetentionDays            Int     @default(365)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+// ============================================
+// ASSESSMENT & GOALS
+// ============================================
+
+model UserGoal {
+  id              String       @id @default(uuid())
+  userId          String
+  category        GoalCategory
+  customGoalText  String?      @db.VarChar(500)
+  pillar          HealthPillar
+  isPrimary       Boolean      @default(false)
+
+  // SMART Goal Details
+  title           String       @db.VarChar(200)
+  description     String       @db.Text
+  targetValue     Float
+  targetUnit      String       @db.VarChar(50)
+  currentValue    Float?
+  startValue      Float?
+
+  // Timeline
+  startDate       DateTime     @db.Date
+  targetDate      DateTime     @db.Date
+  durationWeeks   Int
+
+  // Milestones (stored as JSON)
+  milestones      Json         @default("[]")
+
+  // Motivation
+  motivation      String       @db.VarChar(500)
+  confidenceLevel Int          @db.SmallInt
+
+  // Status
+  status          GoalStatus   @default(active)
+  progress        Float        @default(0)
+
+  // Safety
+  isSafetyChecked      Boolean  @default(false)
+  safetyWarnings       String[] @default([])
+  requiresDoctorConsult Boolean @default(false)
+
+  // AI Metadata
+  aiSuggested          Boolean  @default(false)
+  aiConfidenceScore    Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plans UserPlan[]
+
+  @@index([userId, status])
+  @@index([userId, isPrimary])
+  @@index([userId, pillar])
+  @@map("user_goals")
+}
+
+model AssessmentQuestion {
+  id          String       @id @default(uuid())
+  questionId  String       @unique @db.VarChar(100)
+  text        String       @db.Text
+  type        QuestionType
+  category    String       @db.VarChar(50) // GoalCategory or 'baseline'
+  pillar      HealthPillar?
+  orderNum    Int
+  isRequired  Boolean      @default(true)
+
+  // Options (JSON for flexibility)
+  options     Json?
+  sliderConfig Json?
+  validation  Json?
+  showIf      Json?
+
+  isActive    Boolean      @default(true)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([category, orderNum])
+  @@index([isActive])
+  @@map("assessment_questions")
+}
+
+model AssessmentResponse {
+  id              String         @id @default(uuid())
+  userId          String
+  assessmentType  AssessmentType
+  goalCategory    GoalCategory
+
+  // Responses (JSON array)
+  responses       Json           @default("[]")
+
+  // Deep assessment conversation
+  conversationTranscript Json?
+
+  // Extracted insights
+  extractedInsights Json?
+
+  // Baseline data
+  baselineData    Json           @default("{}")
+
+  // Body stats
+  bodyStats       Json?
+
+  // Status
+  isComplete      Boolean        @default(false)
+  completedAt     DateTime?
+  timeSpentSeconds Int?
+
+  // Mode switch tracking
+  switchedFromMode AssessmentType?
+  switchedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isComplete])
+  @@index([userId, assessmentType])
+  @@map("assessment_responses")
+}
+
+// ============================================
+// INTEGRATIONS & HEALTH DATA
+// ============================================
+
+model UserIntegration {
+  id                    String              @id @default(uuid())
+  userId                String
+  provider              IntegrationProvider
+
+  // OAuth tokens (encrypted in application layer)
+  accessToken           String              @db.Text
+  refreshToken          String?             @db.Text
+  tokenExpiry           DateTime?
+  scopes                String[]            @default([])
+
+  // Connection status
+  status                SyncStatus          @default(pending)
+  connectedAt           DateTime            @default(now())
+  disconnectedAt        DateTime?
+
+  // Sync tracking
+  lastSyncAt            DateTime?
+  lastSyncStatus        String?             @db.VarChar(20)
+  lastSyncError         String?             @db.Text
+  syncRetryCount        Int                 @default(0)
+  nextSyncAt            DateTime?
+
+  // Initial sync progress
+  initialSyncComplete   Boolean             @default(false)
+  initialSyncProgress   Json?
+
+  // User preferences for this integration
+  isPrimaryForDataTypes DataType[]          @default([])
+  isEnabled             Boolean             @default(true)
+
+  // Device info
+  deviceInfo            Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  syncLogs          SyncLog[]
+  healthDataRecords HealthDataRecord[]
+
+  @@unique([userId, provider])
+  @@index([userId, status])
+  @@index([status, nextSyncAt])
+  @@map("user_integrations")
+}
+
+model SyncLog {
+  id               String              @id @default(uuid())
+  userId           String
+  integrationId    String
+  provider         IntegrationProvider
+
+  // Sync details
+  syncType         String              @db.VarChar(20) // initial, incremental, manual, webhook
+  startedAt        DateTime            @default(now())
+  completedAt      DateTime?
+  durationMs       Int?
+
+  // Results
+  status           String              @db.VarChar(20) // success, partial, failed
+  recordsProcessed Int                 @default(0)
+  recordsCreated   Int                 @default(0)
+  recordsUpdated   Int                 @default(0)
+  recordsSkipped   Int                 @default(0)
+
+  // Errors (JSON array)
+  syncErrors       Json?
+
+  // Date range synced
+  dateRangeStart   DateTime?
+  dateRangeEnd     DateTime?
+
+  createdAt        DateTime            @default(now())
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  integration UserIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([integrationId, createdAt(sort: Desc)])
+  @@map("sync_logs")
+}
+
+model HealthDataRecord {
+  id             String              @id @default(uuid())
+  userId         String
+  integrationId  String
+  provider       IntegrationProvider
+  dataType       DataType
+
+  // Timestamp
+  recordedAt     DateTime
+  receivedAt     DateTime            @default(now())
+
+  // Value (flexible structure as JSON)
+  value          Json
+  unit           String              @db.VarChar(50)
+
+  // Source priority
+  sourcePriority Int                 @default(0)
+  isGoldenSource Boolean             @default(false)
+
+  // Raw data reference
+  rawDataId      String?             @db.VarChar(255)
+
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  integration UserIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dataType, recordedAt(sort: Desc)])
+  @@index([userId, recordedAt(sort: Desc)])
+  @@index([userId, dataType, isGoldenSource])
+  @@map("health_data_records")
+}
+
+// ============================================
+// PLANS & ACTIVITIES
+// ============================================
+
+model UserPlan {
+  id            String       @id @default(uuid())
+  userId        String
+  goalId        String
+
+  // Plan metadata
+  name          String       @db.VarChar(200)
+  description   String       @db.Text
+  pillar        HealthPillar
+  goalCategory  GoalCategory
+
+  // Duration
+  startDate     DateTime     @db.Date
+  endDate       DateTime     @db.Date
+  durationWeeks Int
+  currentWeek   Int          @default(1)
+
+  // Status
+  status        PlanStatus   @default(draft)
+  pausedAt      DateTime?
+  resumedAt     DateTime?
+  completedAt   DateTime?
+
+  // Activities (JSON array for flexibility)
+  activities    Json         @default("[]")
+
+  // Weekly focuses
+  weeklyFocuses Json         @default("[]")
+
+  // AI generation metadata
+  aiGenerated   Boolean      @default(true)
+  aiModel       String?      @db.VarChar(50)
+  generationParams Json?
+
+  // User adjustments
+  userAdjustments Json       @default("[]")
+
+  // Progress
+  overallProgress       Float  @default(0)
+  weeklyCompletionRates Json   @default("[]")
+
+  // User feedback
+  userRating    Int?         @db.SmallInt
+  userFeedback  String?      @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal         UserGoal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  activityLogs ActivityLog[]
+
+  @@index([userId, status])
+  @@index([userId, goalId])
+  @@map("user_plans")
+}
+
+model ActivityLog {
+  id            String            @id @default(uuid())
+  userId        String
+  planId        String
+  activityId    String            @db.VarChar(100)
+
+  // When
+  scheduledDate DateTime          @db.Date
+  completedAt   DateTime?
+
+  // Status
+  status        ActivityLogStatus @default(pending)
+
+  // Tracking data
+  actualValue   Float?
+  targetValue   Float?
+  duration      Int?              // minutes
+
+  // Notes
+  userNotes     String?           @db.Text
+  mood          Int?              @db.SmallInt
+
+  // AI feedback
+  aiFeedback    String?           @db.Text
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan UserPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([userId, scheduledDate(sort: Desc)])
+  @@index([userId, planId, scheduledDate(sort: Desc)])
+  @@index([planId, activityId, scheduledDate])
+  @@map("activity_logs")
+}
