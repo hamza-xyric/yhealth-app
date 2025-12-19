@@ -29,7 +29,13 @@ router.get(
   planController.getPlans
 );
 
-// Get today's activities
+// Get active plan
+router.get(
+  '/active',
+  planController.getActivePlan
+);
+
+// Get today's activities (global - uses active plan)
 router.get(
   '/today',
   planController.getTodayActivities
@@ -55,6 +61,30 @@ router.post(
 router.get(
   '/:planId',
   planController.getPlan
+);
+
+// Get plan's weekly summary
+router.get(
+  '/:planId/summary/weekly',
+  planController.getWeeklySummary
+);
+
+// Get today's activities for specific plan
+router.get(
+  '/:planId/today',
+  planController.getTodayActivities
+);
+
+// Get activity logs
+router.get(
+  '/:planId/logs',
+  planController.getActivityLogs
+);
+
+// Update plan
+router.patch(
+  '/:planId',
+  planController.updatePlan
 );
 
 // Activate plan

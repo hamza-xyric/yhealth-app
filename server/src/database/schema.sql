@@ -58,7 +58,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- TABLES
 -- ============================================
 
--- Users table
+-- Users table (supports both local and social auth via NextAuth)
 DROP TABLE IF EXISTS users CASCADE;
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -66,16 +66,18 @@ CREATE TABLE users (
     password VARCHAR(255),
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
-    date_of_birth DATE NOT NULL,
-    gender gender NOT NULL,
+    date_of_birth DATE,
+    gender gender,
     role user_role DEFAULT 'user',
     is_active BOOLEAN DEFAULT true,
     is_email_verified BOOLEAN DEFAULT false,
     avatar VARCHAR(500),
     phone VARCHAR(20),
 
-    -- Auth provider
+    -- Auth provider (local, google, apple)
     auth_provider auth_provider DEFAULT 'local',
+    -- Provider user ID (for social auth - e.g., Google sub ID)
+    provider_id VARCHAR(255),
 
     -- Onboarding
     onboarding_status onboarding_status DEFAULT 'registered',
@@ -102,25 +104,7 @@ CREATE INDEX idx_users_is_active ON users(is_active);
 CREATE INDEX idx_users_created_at ON users(created_at DESC);
 CREATE INDEX idx_users_onboarding_status ON users(onboarding_status);
 CREATE INDEX idx_users_email ON users(email);
-
--- Social profiles table
-DROP TABLE IF EXISTS social_profiles CASCADE;
-CREATE TABLE social_profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    provider auth_provider NOT NULL,
-    provider_id VARCHAR(255) NOT NULL,
-    email VARCHAR(255),
-    name VARCHAR(100),
-    avatar VARCHAR(500),
-    access_token TEXT,
-    refresh_token TEXT,
-    token_expiry TIMESTAMP,
-
-    UNIQUE(provider, provider_id)
-);
-
-CREATE INDEX idx_social_profiles_user_id ON social_profiles(user_id);
+CREATE INDEX idx_users_provider ON users(auth_provider, provider_id);
 
 -- Consent records table
 DROP TABLE IF EXISTS consent_records CASCADE;

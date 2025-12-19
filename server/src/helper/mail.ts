@@ -22,6 +22,7 @@ export const EMAIL_SUBJECTS = {
   'password-reset': 'Reset Your Password - yHealth',
   'password-changed': 'Password Changed - yHealth',
   'password-reset-otp': 'Your Password Reset Code - yHealth',
+  'registration-otp': 'Your Verification Code - yHealth',
   'security-alert': 'Security Alert - yHealth',
   'welcome': 'Welcome to yHealth - Your AI Life Coach!',
   'assessment-reminder': 'Complete Your Assessment - yHealth',
@@ -69,6 +70,7 @@ export interface IMailHelper {
   sendEmailVerifiedEmail(email: string, firstName: string): Promise<boolean>;
   sendPasswordResetEmail(email: string, firstName: string, resetToken: string, ipAddress?: string): Promise<boolean>;
   sendPasswordResetOTPEmail(email: string, firstName: string, otpCode: string, expiresIn?: string): Promise<boolean>;
+  sendRegistrationOTPEmail(email: string, firstName: string, otpCode: string, expiresIn?: string): Promise<boolean>;
   sendPasswordChangedEmail(email: string, firstName: string, ipAddress?: string, device?: string): Promise<boolean>;
   sendSecurityAlertEmail(email: string, firstName: string, alertType: string, ipAddress?: string, location?: string, device?: string): Promise<boolean>;
   sendWelcomeEmail(email: string, firstName: string): Promise<boolean>;
@@ -350,6 +352,23 @@ class MailHelper {
       email,
       subject: EMAIL_SUBJECTS['password-reset-otp'],
       template: 'passwordResetOTP',
+      data: { firstName, otpCode, expiresIn },
+    });
+  }
+
+  /**
+   * Send registration OTP email for account verification
+   */
+  public async sendRegistrationOTPEmail(
+    email: string,
+    firstName: string,
+    otpCode: string,
+    expiresIn: string = '10 minutes'
+  ): Promise<boolean> {
+    return this.send({
+      email,
+      subject: EMAIL_SUBJECTS['registration-otp'],
+      template: 'registrationOTP',
       data: { firstName, otpCode, expiresIn },
     });
   }

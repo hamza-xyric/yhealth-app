@@ -647,24 +647,31 @@ export const getWeeklySummary = asyncHandler(async (req: AuthenticatedRequest, r
 
 /**
  * Get Today's Activities
- * GET /api/plans/:planId/today
+ * GET /api/plans/today or GET /api/plans/:planId/today
  */
 export const getTodayActivities = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user?.userId;
   if (!userId) throw ApiError.unauthorized();
 
   const { planId } = req.params;
+  let plan: UserPlanRow;
 
-  if (!planId) throw ApiError.badRequest('Plan ID is required');
+  if (planId) {
+    const planResult = await query<UserPlanRow>(
+      'SELECT * FROM user_plans WHERE id = $1 AND user_id = $2',
+      [planId, userId]
+    );
+    if (planResult.rows.length === 0) throw ApiError.notFound('Plan not found');
+    plan = planResult.rows[0];
+  } else {
+    const planResult = await query<UserPlanRow>(
+      `SELECT * FROM user_plans WHERE user_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1`,
+      [userId]
+    );
+    if (planResult.rows.length === 0) throw ApiError.notFound('No active plan found');
+    plan = planResult.rows[0];
+  }
 
-  const planResult = await query<UserPlanRow>(
-    'SELECT * FROM user_plans WHERE id = $1 AND user_id = $2',
-    [planId, userId]
-  );
-
-  if (planResult.rows.length === 0) throw ApiError.notFound('Plan not found');
-
-  const plan = planResult.rows[0];
   const today = new Date();
   const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][today.getDay()] as DayOfWeek;
 
@@ -677,7 +684,7 @@ export const getTodayActivities = asyncHandler(async (req: AuthenticatedRequest,
 
   const logsResult = await query<ActivityLogRow>(
     'SELECT * FROM activity_logs WHERE plan_id = $1 AND scheduled_date = $2',
-    [planId, todayStart]
+    [plan.id, todayStart]
   );
 
   const logsMap = new Map(logsResult.rows.map(l => [l.activity_id, l]));
@@ -695,6 +702,7 @@ export const getTodayActivities = asyncHandler(async (req: AuthenticatedRequest,
   });
 
   ApiResponse.success(res, {
+    planId: plan.id,
     date: today,
     dayOfWeek,
     activities: formattedActivities,

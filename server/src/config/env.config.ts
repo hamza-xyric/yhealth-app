@@ -101,14 +101,26 @@ export const env = {
     s3Bucket: process.env['AWS_S3_BUCKET'],
   },
 
+  // Cloudflare R2 Storage
+  r2: {
+    accountId: process.env['R2_ACCOUNT_ID'],
+    accessKeyId: process.env['R2_ACCESS_KEY_ID'],
+    secretAccessKey: process.env['R2_SECRET_ACCESS_KEY'],
+    bucketName: process.env['R2_BUCKET_NAME'] || 'yhealth',
+    publicUrl: process.env['R2_PUBLIC_URL'],
+    endpoint: process.env['R2_ACCOUNT_ID']
+      ? `https://${process.env['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com`
+      : undefined,
+  },
+
   // Email (SMTP)
   smtp: {
     host: process.env['SMTP_HOST'],
     port: parseInt(process.env['SMTP_PORT'] || '587', 10),
     secure: process.env['SMTP_SECURE'] === 'true',
-    user: process.env['SMTP_USER'],
+    user: process.env['SMTP_USER'] || process.env['SMTP_FROM'],
     pass: process.env['SMTP_PASS'],
-    from: process.env['SMTP_FROM'] || 'noreply@yhealth.com',
+    from: process.env['SMTP_FROM'] || process.env['SMTP_USER'] || 'noreply@yhealth.com',
   },
 
   // Stripe

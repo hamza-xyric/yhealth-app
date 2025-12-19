@@ -1,14 +1,14 @@
-import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
-import { logger } from '../services/logger.service.js';
+import { Pool, PoolClient, QueryResult, QueryResultRow } from "pg";
+import { logger } from "../services/logger.service.js";
 
 // Database configuration from environment variables
 const dbConfig = {
-  host: process.env['DB_HOST'] || 'localhost',
-  port: parseInt(process.env['DB_PORT'] || '5432', 10),
-  database: process.env['DB_NAME'] || 'yhealth',
-  user: process.env['DB_USER'] || 'postgres',
-  password: process.env['DB_PASSWORD'] || '',
-  max: 20, // Maximum number of connections in the pool
+  host: process.env["DB_HOST"] || "localhost",
+  port: parseInt(process.env["DB_PORT"] || "5432", 10),
+  database: process.env["DB_NAME"] || "yhealth",
+  user: process.env["DB_USER"] || "postgres",
+  password: process.env["DB_PASSWORD"] || "",
+  max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 };
@@ -17,12 +17,12 @@ const dbConfig = {
 const pool = new Pool(dbConfig);
 
 // Log connection events
-pool.on('connect', () => {
-  logger.debug('New PostgreSQL client connected');
+pool.on("connect", () => {
+  logger.debug("New PostgreSQL client connected");
 });
 
-pool.on('error', (err) => {
-  logger.error('PostgreSQL pool error', { error: err.message });
+pool.on("error", (err) => {
+  logger.error("PostgreSQL pool error", { error: err.message });
 });
 
 /**
@@ -36,10 +36,17 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   try {
     const result = await pool.query<T>(text, params);
     const duration = Date.now() - start;
-    logger.debug('Executed query', { text: text.substring(0, 100), duration, rows: result.rowCount });
+    logger.debug("Executed query", {
+      text: text.substring(0, 100),
+      duration,
+      rows: result.rowCount,
+    });
     return result;
   } catch (error) {
-    logger.error('Query error', { text: text.substring(0, 100), error: (error as Error).message });
+    logger.error("Query error", {
+      text: text.substring(0, 100),
+      error: (error as Error).message,
+    });
     throw error;
   }
 }
@@ -60,12 +67,12 @@ export async function transaction<T>(
 ): Promise<T> {
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
     const result = await callback(client);
-    await client.query('COMMIT');
+    await client.query("COMMIT");
     return result;
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();
@@ -77,11 +84,15 @@ export async function transaction<T>(
  */
 export async function testConnection(): Promise<boolean> {
   try {
-    const result = await pool.query('SELECT NOW()');
-    logger.info('PostgreSQL connected successfully', { timestamp: result.rows[0].now });
+    const result = await pool.query("SELECT NOW()");
+    logger.info("PostgreSQL connected successfully", {
+      timestamp: result.rows[0].now,
+    });
     return true;
   } catch (error) {
-    logger.error('PostgreSQL connection failed', { error: (error as Error).message });
+    logger.error("PostgreSQL connection failed", {
+      error: (error as Error).message,
+    });
     return false;
   }
 }
@@ -91,7 +102,7 @@ export async function testConnection(): Promise<boolean> {
  */
 export async function closePool(): Promise<void> {
   await pool.end();
-  logger.info('PostgreSQL pool closed');
+  logger.info("PostgreSQL pool closed");
 }
 
 /**

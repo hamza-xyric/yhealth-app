@@ -2,14 +2,14 @@
   "info": {
     "_postman_id": "yhealth-api-collection",
     "name": "YHealth API",
-    "description": "Complete API collection for YHealth Server - Onboarding & Assessment Module\n\nBase URL: {{baseUrl}}\n\nAuthentication: Bearer Token (JWT)",
+    "description": "Complete API collection for YHealth Server\n\nBase URL: {{baseUrl}}\n\nAuthentication: Bearer Token (JWT)\n\nTest User: salman@xyric.ai / salman121",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.0.0"
+    "version": "2.0.0"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:5000/api",
+      "value": "http://localhost:9090/api",
       "type": "string"
     },
     {
@@ -41,6 +41,16 @@
       "key": "planId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "fileKey",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "encodedFileKey",
+      "value": "",
+      "type": "string"
     }
   ],
   "auth": {
@@ -61,6 +71,7 @@
         {
           "name": "Health Check",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
             "url": {
@@ -68,12 +79,13 @@
               "host": ["{{baseUrl}}"],
               "path": ["health"]
             },
-            "description": "Get server health status including database and cache"
+            "description": "Get server health status including database and services"
           }
         },
         {
           "name": "Liveness Probe",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
             "url": {
@@ -87,6 +99,7 @@
         {
           "name": "Readiness Probe",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "GET",
             "header": [],
             "url": {
@@ -114,7 +127,7 @@
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('accessToken', response.data.tokens.accessToken);",
                   "    pm.collectionVariables.set('refreshToken', response.data.tokens.refreshToken);",
-                  "    pm.collectionVariables.set('userId', response.data.user._id);",
+                  "    pm.collectionVariables.set('userId', response.data.user.id);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -122,16 +135,9 @@
             }
           ],
           "request": {
-            "auth": {
-              "type": "noauth"
-            },
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"SecurePass123!\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"dateOfBirth\": \"1990-05-15\",\n    \"gender\": \"male\"\n}"
@@ -155,7 +161,7 @@
                   "    const response = pm.response.json();",
                   "    pm.collectionVariables.set('accessToken', response.data.tokens.accessToken);",
                   "    pm.collectionVariables.set('refreshToken', response.data.tokens.refreshToken);",
-                  "    pm.collectionVariables.set('userId', response.data.user._id);",
+                  "    pm.collectionVariables.set('userId', response.data.user.id);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -163,19 +169,12 @@
             }
           ],
           "request": {
-            "auth": {
-              "type": "noauth"
-            },
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"user@example.com\",\n    \"password\": \"SecurePass123!\"\n}"
+              "raw": "{\n    \"email\": \"salman@xyric.ai\",\n    \"password\": \"salman121\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -186,28 +185,54 @@
           }
         },
         {
-          "name": "Social Auth (Google)",
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
+          "name": "Social Auth (Google/Apple)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.data.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', response.data.tokens.refreshToken);",
+                  "    pm.collectionVariables.set('userId', response.data.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
               }
-            ],
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"provider\": \"google\",\n    \"idToken\": \"<google-id-token>\"\n}"
+              "raw": "{\n    \"provider\": \"google\",\n    \"email\": \"user@gmail.com\",\n    \"name\": \"John Doe\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"providerId\": \"google-sub-id-123\",\n    \"avatar\": \"https://lh3.googleusercontent.com/a/default-user\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/social",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "social"]
             },
-            "description": "Authenticate with Google Sign-In"
+            "description": "Authenticate with Google/Apple via NextAuth. Creates user if not exists."
+          }
+        },
+        {
+          "name": "Complete Social Profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"dateOfBirth\": \"1990-05-15\",\n    \"gender\": \"male\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/complete-profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "complete-profile"]
+            },
+            "description": "Complete profile for social sign-up users (DOB, Gender)"
           }
         },
         {
@@ -224,18 +249,26 @@
           }
         },
         {
+          "name": "Get Onboarding Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/onboarding-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "onboarding-status"]
+            },
+            "description": "Get user's onboarding progress and current step"
+          }
+        },
+        {
           "name": "Record Consent",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"consents\": [\n        {\n            \"type\": \"terms_of_service\",\n            \"version\": \"1.0\",\n            \"accepted\": true\n        },\n        {\n            \"type\": \"privacy_policy\",\n            \"version\": \"1.0\",\n            \"accepted\": true\n        },\n        {\n            \"type\": \"email_marketing\",\n            \"version\": \"1.0\",\n            \"accepted\": false\n        }\n    ]\n}"
+              "raw": "{\n    \"termsOfService\": true,\n    \"privacyPolicy\": true,\n    \"emailMarketing\": false,\n    \"whatsAppCoaching\": false\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/consent",
@@ -249,15 +282,10 @@
           "name": "Enroll WhatsApp",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"phoneNumber\": \"1234567890\",\n    \"countryCode\": \"+1\"\n}"
+              "raw": "{\n    \"phoneNumber\": \"+11234567890\",\n    \"countryCode\": \"+1\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/whatsapp/enroll",
@@ -271,62 +299,84 @@
           "name": "Verify WhatsApp",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"phoneNumber\": \"1234567890\",\n    \"countryCode\": \"+1\",\n    \"code\": \"123456\"\n}"
+              "raw": "{\n    \"code\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/whatsapp/verify",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "whatsapp", "verify"]
             },
-            "description": "Verify WhatsApp phone number with SMS code"
+            "description": "Verify WhatsApp phone number with code"
           }
         },
         {
-          "name": "Refresh Token",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', response.data.tokens.accessToken);",
-                  "    pm.collectionVariables.set('refreshToken', response.data.tokens.refreshToken);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
+          "name": "Skip WhatsApp",
           "request": {
-            "auth": {
-              "type": "noauth"
-            },
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/whatsapp/skip",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "whatsapp", "skip"]
+            },
+            "description": "Skip WhatsApp enrollment"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+              "raw": "{\n    \"email\": \"user@example.com\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/refresh",
+              "raw": "{{baseUrl}}/auth/forgot-password",
               "host": ["{{baseUrl}}"],
-              "path": ["auth", "refresh"]
+              "path": ["auth", "forgot-password"]
             },
-            "description": "Refresh access token using refresh token"
+            "description": "Request password reset email"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"reset-token-here\",\n    \"password\": \"NewSecurePass123!\",\n    \"confirmPassword\": \"NewSecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            },
+            "description": "Reset password with token"
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"verification-token-here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-email"]
+            },
+            "description": "Verify email address with token"
           }
         },
         {
@@ -349,269 +399,219 @@
       "description": "Assessment and goal management endpoints",
       "item": [
         {
-          "name": "Goals",
-          "item": [
-            {
-              "name": "Get Goal Categories",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/goal-categories",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "goal-categories"]
-                },
-                "description": "Get all available goal categories with metadata"
-              }
+          "name": "Get Goal Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assessment/goal-categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "goal-categories"]
             },
-            {
-              "name": "Create Goal",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "if (pm.response.code === 201) {",
-                      "    const response = pm.response.json();",
-                      "    pm.collectionVariables.set('goalId', response.data._id);",
-                      "}"
-                    ],
-                    "type": "text/javascript"
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"category\": \"weight_loss\",\n    \"title\": \"Lose 10kg in 3 months\",\n    \"description\": \"Achieve a healthier weight through diet and exercise\",\n    \"pillar\": \"fitness\",\n    \"targetValue\": 10,\n    \"targetUnit\": \"kg\",\n    \"motivation\": \"I want to feel more energetic and confident\",\n    \"confidenceLevel\": 8,\n    \"timeline\": {\n        \"startDate\": \"2024-01-01\",\n        \"targetDate\": \"2024-04-01\",\n        \"durationWeeks\": 12\n    }\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/goals",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "goals"]
-                },
-                "description": "Create a new goal"
-              }
-            },
-            {
-              "name": "Get All Goals",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/goals",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "goals"]
-                },
-                "description": "Get all user goals"
-              }
-            },
-            {
-              "name": "Get Goal by ID",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/goals/{{goalId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "goals", "{{goalId}}"]
-                },
-                "description": "Get a specific goal by ID"
-              }
-            },
-            {
-              "name": "Update Goal",
-              "request": {
-                "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"status\": \"active\",\n    \"progress\": 25,\n    \"currentValue\": 2.5\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/goals/{{goalId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "goals", "{{goalId}}"]
-                },
-                "description": "Update a goal"
-              }
-            },
-            {
-              "name": "Set Primary Goal",
-              "request": {
-                "method": "POST",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/goals/{{goalId}}/primary",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "goals", "{{goalId}}", "primary"]
-                },
-                "description": "Set a goal as the primary goal"
-              }
-            }
-          ]
+            "description": "Get all available goal categories with metadata"
+          }
         },
         {
-          "name": "Quick Assessment",
-          "item": [
+          "name": "Create Goal",
+          "event": [
             {
-              "name": "Start Quick Assessment",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "if (pm.response.code === 200) {",
-                      "    const response = pm.response.json();",
-                      "    pm.collectionVariables.set('assessmentId', response.data.assessmentId);",
-                      "}"
-                    ],
-                    "type": "text/javascript"
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('goalId', response.data.goal.id);",
+                  "}"
                 ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"goalCategory\": \"weight_loss\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/quick/start",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "quick", "start"]
-                },
-                "description": "Start a quick assessment for a goal category"
-              }
-            },
-            {
-              "name": "Submit Quick Assessment",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"responses\": [\n        {\n            \"questionId\": \"activity_level\",\n            \"value\": \"moderate\"\n        },\n        {\n            \"questionId\": \"current_weight\",\n            \"value\": 85\n        },\n        {\n            \"questionId\": \"target_weight\",\n            \"value\": 75\n        }\n    ]\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/quick/{{assessmentId}}/submit",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "quick", "{{assessmentId}}", "submit"]
-                },
-                "description": "Submit quick assessment responses"
+                "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"category\": \"weight_loss\",\n    \"title\": \"Lose 10kg in 3 months\",\n    \"description\": \"Achieve a healthier weight through diet and exercise\",\n    \"pillar\": \"fitness\",\n    \"targetValue\": 10,\n    \"targetUnit\": \"kg\",\n    \"motivation\": \"I want to feel more energetic and confident\",\n    \"confidenceLevel\": 8,\n    \"timeline\": {\n        \"startDate\": \"2025-01-01\",\n        \"targetDate\": \"2025-04-01\",\n        \"durationWeeks\": 12\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assessment/goals",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "goals"]
+            },
+            "description": "Create a new goal"
+          }
         },
         {
-          "name": "Deep Assessment",
-          "item": [
-            {
-              "name": "Start Deep Assessment",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "if (pm.response.code === 200) {",
-                      "    const response = pm.response.json();",
-                      "    pm.collectionVariables.set('assessmentId', response.data.assessmentId);",
-                      "}"
-                    ],
-                    "type": "text/javascript"
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"goalCategory\": \"weight_loss\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/deep/start",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "deep", "start"]
-                },
-                "description": "Start a conversational deep assessment"
-              }
+          "name": "Get All Goals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assessment/goals",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "goals"]
             },
-            {
-              "name": "Send Message",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"message\": \"I've tried to lose weight before but always regain it. I think my main issue is stress eating.\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/deep/{{assessmentId}}/message",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "deep", "{{assessmentId}}", "message"]
-                },
-                "description": "Send a message in deep assessment conversation"
-              }
+            "description": "Get all user goals"
+          }
+        },
+        {
+          "name": "Get Goal by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assessment/goals/{{goalId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "goals", "{{goalId}}"]
             },
+            "description": "Get a specific goal by ID"
+          }
+        },
+        {
+          "name": "Update Goal",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"active\",\n    \"progress\": 25,\n    \"currentValue\": 2.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assessment/goals/{{goalId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "goals", "{{goalId}}"]
+            },
+            "description": "Update a goal"
+          }
+        },
+        {
+          "name": "Set Primary Goal",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assessment/goals/{{goalId}}/primary",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "goals", "{{goalId}}", "primary"]
+            },
+            "description": "Set a goal as the primary goal"
+          }
+        },
+        {
+          "name": "Start Quick Assessment",
+          "event": [
             {
-              "name": "Complete Deep Assessment",
-              "request": {
-                "method": "POST",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/assessment/deep/{{assessmentId}}/complete",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["assessment", "deep", "{{assessmentId}}", "complete"]
-                },
-                "description": "Complete the deep assessment"
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('assessmentId', response.data.assessmentId);",
+                  "}"
+                ],
+                "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"goalCategory\": \"weight_loss\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assessment/quick/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "quick", "start"]
+            },
+            "description": "Start a quick assessment for a goal category"
+          }
+        },
+        {
+          "name": "Submit Quick Assessment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"responses\": [\n        { \"questionId\": \"activity_level\", \"value\": \"moderate\" },\n        { \"questionId\": \"current_weight\", \"value\": 85 },\n        { \"questionId\": \"target_weight\", \"value\": 75 }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assessment/quick/{{assessmentId}}/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "quick", "{{assessmentId}}", "submit"]
+            },
+            "description": "Submit quick assessment responses"
+          }
+        },
+        {
+          "name": "Start Deep Assessment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('assessmentId', response.data.assessmentId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"goalCategory\": \"weight_loss\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assessment/deep/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "deep", "start"]
+            },
+            "description": "Start a conversational deep assessment"
+          }
+        },
+        {
+          "name": "Send Deep Assessment Message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"message\": \"I've tried to lose weight before but always regain it.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assessment/deep/{{assessmentId}}/message",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "deep", "{{assessmentId}}", "message"]
+            },
+            "description": "Send a message in deep assessment conversation"
+          }
+        },
+        {
+          "name": "Complete Deep Assessment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assessment/deep/{{assessmentId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["assessment", "deep", "{{assessmentId}}", "complete"]
+            },
+            "description": "Complete the deep assessment"
+          }
         },
         {
           "name": "Switch Assessment Mode",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"assessmentId\": \"{{assessmentId}}\",\n    \"targetMode\": \"deep\"\n}"
@@ -660,12 +660,7 @@
           "name": "Initiate OAuth",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"provider\": \"whoop\"\n}"
@@ -679,7 +674,7 @@
           }
         },
         {
-          "name": "Get Sync Dashboard",
+          "name": "Get Sync Status",
           "request": {
             "method": "GET",
             "header": [],
@@ -740,12 +735,7 @@
           "name": "Update Notification Preferences",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"email\": {\n        \"enabled\": true,\n        \"frequency\": \"daily_digest\",\n        \"types\": [\"reminders\", \"progress_updates\", \"weekly_summary\"]\n    },\n    \"push\": {\n        \"enabled\": true,\n        \"types\": [\"reminders\", \"achievements\"],\n        \"quietHours\": {\n            \"enabled\": true,\n            \"start\": \"22:00\",\n            \"end\": \"07:00\"\n        }\n    }\n}"
@@ -762,12 +752,7 @@
           "name": "Update Coaching Preferences",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"style\": \"supportive\",\n    \"intensity\": \"moderate\",\n    \"checkInFrequency\": \"daily\",\n    \"preferredCheckInTime\": \"09:00\"\n}"
@@ -797,12 +782,7 @@
           "name": "Update Display Preferences",
           "request": {
             "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"theme\": \"dark\",\n    \"language\": \"en\",\n    \"timezone\": \"America/New_York\",\n    \"units\": {\n        \"weight\": \"lbs\",\n        \"height\": \"ft\",\n        \"distance\": \"mi\",\n        \"temperature\": \"fahrenheit\"\n    }\n}"
@@ -822,15 +802,24 @@
       "description": "Plan generation and management endpoints",
       "item": [
         {
-          "name": "Generate Plan Preview",
+          "name": "Generate Plan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('planId', response.data.plan.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n    \"goalId\": \"{{goalId}}\"\n}"
@@ -840,7 +829,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["plans", "generate"]
             },
-            "description": "Generate a plan preview based on assessment and goals"
+            "description": "Generate a plan based on goal"
           }
         },
         {
@@ -865,7 +854,7 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    const response = pm.response.json();",
-                  "    pm.collectionVariables.set('planId', response.data._id);",
+                  "    pm.collectionVariables.set('planId', response.data.plan.id);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -874,22 +863,17 @@
           ],
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"goalId\": \"{{goalId}}\",\n    \"name\": \"My Weight Loss Plan\",\n    \"planPreview\": {}\n}"
+              "raw": "{\n    \"goalId\": \"{{goalId}}\",\n    \"name\": \"My Weight Loss Plan\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/plans",
               "host": ["{{baseUrl}}"],
               "path": ["plans"]
             },
-            "description": "Create a new plan from preview"
+            "description": "Create a new plan"
           }
         },
         {
@@ -906,6 +890,71 @@
           }
         },
         {
+          "name": "Get Active Plan",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plans/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "active"]
+            },
+            "description": "Get the currently active plan with today's activities"
+          }
+        },
+        {
+          "name": "Get Today's Activities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plans/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "today"]
+            },
+            "description": "Get today's scheduled activities from active plan"
+          }
+        },
+        {
+          "name": "Get Plan Today's Activities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}", "today"]
+            },
+            "description": "Get today's activities for a specific plan"
+          }
+        },
+        {
+          "name": "Get Weekly Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}/summary/weekly",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}", "summary", "weekly"]
+            },
+            "description": "Get weekly summary with stats and activity breakdown"
+          }
+        },
+        {
+          "name": "Get Activity Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}/logs",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}", "logs"]
+            },
+            "description": "Get activity logs for a plan"
+          }
+        },
+        {
           "name": "Activate Plan",
           "request": {
             "method": "POST",
@@ -919,42 +968,35 @@
           }
         },
         {
-          "name": "Get Today's Activities",
+          "name": "Update Plan",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/plans/today",
-              "host": ["{{baseUrl}}"],
-              "path": ["plans", "today"]
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"paused\"\n}"
             },
-            "description": "Get today's scheduled activities"
+            "url": {
+              "raw": "{{baseUrl}}/plans/{{planId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["plans", "{{planId}}"]
+            },
+            "description": "Update plan status or properties"
           }
         },
         {
           "name": "Log Activity Completion",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"completedAt\": \"2024-01-15T10:30:00Z\",\n    \"actualDuration\": 35,\n    \"notes\": \"Felt great today!\",\n    \"metrics\": {\n        \"caloriesBurned\": 350,\n        \"heartRateAvg\": 145\n    }\n}"
+              "raw": "{\n    \"status\": \"completed\",\n    \"notes\": \"Felt great today!\",\n    \"mood\": 4,\n    \"actualValue\": 45,\n    \"duration\": 35\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/plans/{{planId}}/activities/:activityId/log",
+              "raw": "{{baseUrl}}/plans/{{planId}}/activities/act_1/log",
               "host": ["{{baseUrl}}"],
-              "path": ["plans", "{{planId}}", "activities", ":activityId", "log"],
-              "variable": [
-                {
-                  "key": "activityId",
-                  "value": "activity-id-here"
-                }
-              ]
+              "path": ["plans", "{{planId}}", "activities", "act_1", "log"]
             },
             "description": "Log completion of an activity"
           }
@@ -970,6 +1012,257 @@
               "path": ["plans", "complete-onboarding"]
             },
             "description": "Mark onboarding as complete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "description": "File upload endpoints (Cloudflare R2)\n\nMax file size: 20MB\nAll file types allowed",
+      "item": [
+        {
+          "name": "Storage Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/upload/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload", "health"]
+            },
+            "description": "Check R2 storage service status"
+          }
+        },
+        {
+          "name": "Upload File (Image)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('fileKey', response.data.key);",
+                  "    pm.collectionVariables.set('encodedFileKey', response.data.encodedKey);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload/image",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload", "image"]
+            },
+            "description": "Upload an image file. Types: image, avatar, document, audio, video, file"
+          }
+        },
+        {
+          "name": "Upload File (Generic)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('fileKey', response.data.key);",
+                  "    pm.collectionVariables.set('encodedFileKey', response.data.encodedKey);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload/file",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload", "file"]
+            },
+            "description": "Upload any file type (max 20MB)"
+          }
+        },
+        {
+          "name": "Upload Avatar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('fileKey', response.data.key);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload", "avatar"]
+            },
+            "description": "Upload user avatar (public)"
+          }
+        },
+        {
+          "name": "Upload Multiple Files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload/image/multiple",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload", "image", "multiple"]
+            },
+            "description": "Upload multiple files (max 10)"
+          }
+        },
+        {
+          "name": "Get Presigned Upload URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('fileKey', response.data.key);",
+                  "    pm.collectionVariables.set('encodedFileKey', response.data.encodedKey);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"fileName\": \"document.pdf\",\n    \"mimeType\": \"application/pdf\",\n    \"fileType\": \"document\",\n    \"isPublic\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload/presign",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload", "presign"]
+            },
+            "description": "Get presigned URL for direct browser upload"
+          }
+        },
+        {
+          "name": "Get File URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/upload/url/{{encodedFileKey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload", "url", "{{encodedFileKey}}"]
+            },
+            "description": "Get signed URL for file access (key is base64 encoded)"
+          }
+        },
+        {
+          "name": "Get File Metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/upload/metadata/{{encodedFileKey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload", "metadata", "{{encodedFileKey}}"]
+            },
+            "description": "Get file metadata (size, type, etc.)"
+          }
+        },
+        {
+          "name": "List Files in Folder",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/upload/list/images?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload", "list", "images"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "List files in a folder (images, avatars, documents, etc.)"
+          }
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/upload/file/{{encodedFileKey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload", "file", "{{encodedFileKey}}"]
+            },
+            "description": "Delete a file (key is base64 encoded)"
           }
         }
       ]

@@ -206,7 +206,7 @@ const selectDatabase = (chars: DatabaseDecision['dataCharacteristics']) => {
 name: "Standard Web Application"
 ideal_for:
   - SaaS products
-  - E-commerce platforms
+  - Yhealth platforms
   - Content platforms
   - Business applications
 
@@ -230,7 +230,6 @@ stack:
 
   database:
     primary: "PostgreSQL 16"
-    orm: "Prisma"
     cache: "Redis"
     migrations: "Prisma Migrate"
 
@@ -271,7 +270,7 @@ stack:
     message_queue: "Redis Pub/Sub"
 
   database:
-    primary: "MongoDB" # Better for real-time writes
+    primary: "Postgresql" 
     cache: "Redis"
     session_store: "Redis"
 

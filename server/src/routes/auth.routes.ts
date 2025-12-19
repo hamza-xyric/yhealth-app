@@ -4,6 +4,8 @@ import { authenticate } from '../middlewares/auth.middleware.js';
 import { authLimiter, strictLimiter } from '../middlewares/rateLimiter.middleware.js';
 import {
   registerSchema,
+  verifyRegistrationSchema,
+  resendRegistrationOTPSchema,
   socialAuthSchema,
   completeSocialProfileSchema,
   consentSchema,
@@ -13,6 +15,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   verifyEmailSchema,
+  updateProfileSchema,
 } from '../validators/auth.validator.js';
 import authController from '../controllers/auth.controller.js';
 
@@ -22,12 +25,28 @@ const router = Router();
 // PUBLIC ROUTES (No authentication required)
 // ============================================
 
-// S01.1.1: Core Account Registration
+// S01.1.1: Core Account Registration - Step 1: Send OTP
 router.post(
   '/register',
   authLimiter,
   validate(registerSchema),
   authController.register
+);
+
+// S01.1.1: Core Account Registration - Step 2: Verify OTP and Create Account
+router.post(
+  '/verify-registration',
+  authLimiter,
+  validate(verifyRegistrationSchema),
+  authController.verifyRegistration
+);
+
+// Resend Registration OTP
+router.post(
+  '/resend-registration-otp',
+  strictLimiter,
+  validate(resendRegistrationOTPSchema),
+  authController.resendRegistrationOTP
 );
 
 // S01.1.2: Social Sign-In (Google/Apple)
@@ -132,6 +151,14 @@ router.get(
   '/onboarding-status',
   authenticate,
   authController.getOnboardingStatus
+);
+
+// Update Profile
+router.patch(
+  '/profile',
+  authenticate,
+  validate(updateProfileSchema),
+  authController.updateProfile
 );
 
 export default router;

@@ -3,7 +3,7 @@
 ## Base URL
 
 ```
-http://localhost:8090/api
+http://localhost:9090/api
 ```
 
 ## Response Format
@@ -96,10 +96,10 @@ Register a new user account.
 {
   "email": "user@example.com",
   "password": "SecurePass123!",
-  "profile": {
-    "firstName": "John",
-    "lastName": "Doe"
-  }
+  "firstName": "John",
+  "lastName": "Doe",
+  "dateOfBirth": "1990-05-15",
+  "gender": "male"
 }
 ```
 
@@ -107,20 +107,23 @@ Register a new user account.
 ```json
 {
   "success": true,
-  "message": "User registered successfully",
+  "message": "Account created successfully",
   "data": {
     "user": {
-      "id": "507f1f77bcf86cd799439011",
+      "id": "uuid",
       "email": "user@example.com",
-      "profile": {
-        "firstName": "John",
-        "lastName": "Doe"
-      }
+      "firstName": "John",
+      "lastName": "Doe",
+      "dateOfBirth": "1990-05-15",
+      "gender": "male",
+      "onboardingStatus": "consent_pending"
     },
     "tokens": {
       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-      "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-    }
+      "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "expiresIn": 900
+    },
+    "nextStep": "consent"
   }
 }
 ```
@@ -140,25 +143,94 @@ Login with email and password.
 ```json
 {
   "success": true,
-  "message": "Login successful",
+  "message": "Logged in successfully",
   "data": {
-    "user": { },
+    "user": {
+      "id": "uuid",
+      "email": "user@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "onboardingStatus": "completed"
+    },
     "tokens": {
       "accessToken": "...",
-      "refreshToken": "..."
+      "refreshToken": "...",
+      "expiresIn": 900
     }
   }
 }
 ```
 
 ### POST /auth/social
-Authenticate via social provider.
+Authenticate via social provider (NextAuth integration).
+
+Frontend (NextAuth) handles OAuth flow and sends user data to this endpoint.
+Creates user if not exists, verifies if exists.
 
 **Request Body:**
 ```json
 {
   "provider": "google",
-  "idToken": "google-id-token-here"
+  "email": "user@gmail.com",
+  "name": "John Doe",
+  "firstName": "John",
+  "lastName": "Doe",
+  "providerId": "google-sub-id",
+  "avatar": "https://lh3.googleusercontent.com/..."
+}
+```
+
+**Response (New User):** `201 Created`
+```json
+{
+  "success": true,
+  "message": "Account created successfully",
+  "data": {
+    "user": {
+      "id": "uuid",
+      "email": "user@gmail.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "avatar": "https://...",
+      "isEmailVerified": true,
+      "onboardingStatus": "consent_pending"
+    },
+    "tokens": {
+      "accessToken": "...",
+      "refreshToken": "...",
+      "expiresIn": 900
+    },
+    "isNewUser": true,
+    "needsProfileCompletion": true,
+    "nextStep": "complete_profile"
+  }
+}
+```
+
+**Response (Existing User):** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Signed in successfully",
+  "data": {
+    "user": { ... },
+    "tokens": { ... },
+    "isNewUser": false,
+    "needsProfileCompletion": false
+  }
+}
+```
+
+### POST /auth/complete-profile
+Complete profile for social sign-up users (DOB, Gender). **Protected**
+
+**Request Body:**
+```json
+{
+  "dateOfBirth": "1990-05-15",
+  "gender": "male",
+  "firstName": "John",
+  "lastName": "Doe"
 }
 ```
 
@@ -727,38 +799,33 @@ Update integration preferences. **Protected**
 ## Plan Endpoints
 
 ### POST /plans/generate
-Generate plan preview. **Protected**
+Generate plan based on goal. **Protected**
 
 **Request Body:**
 ```json
 {
-  "goalIds": ["507f1f77bcf86cd799439011"]
+  "goalId": "uuid"
 }
 ```
 
-**Response:** `200 OK`
+**Response:** `201 Created`
 ```json
 {
   "success": true,
+  "message": "Plan generated successfully",
   "data": {
-    "preview": {
-      "name": "Weight Loss Journey",
-      "duration": "12 weeks",
-      "weeklyFocus": [
-        {
-          "week": 1,
-          "theme": "Foundation",
-          "description": "Building healthy habits"
-        }
-      ],
-      "suggestedActivities": [
-        {
-          "name": "Morning Walk",
-          "type": "exercise",
-          "duration": 30,
-          "frequency": "daily"
-        }
-      ]
+    "plan": {
+      "id": "uuid",
+      "name": "Lose 10 kg in 16 weeks Plan",
+      "description": "A 16-week plan...",
+      "pillar": "fitness",
+      "goalCategory": "weight_loss",
+      "startDate": "2025-01-01",
+      "endDate": "2025-04-30",
+      "durationWeeks": 16,
+      "status": "active",
+      "activities": [...],
+      "weeklyFocuses": [...]
     }
   }
 }
@@ -768,9 +835,29 @@ Generate plan preview. **Protected**
 Get all user plans. **Protected**
 
 **Query Parameters:**
-- `status` - Filter by status (draft, active, completed)
+- `status` - Filter by status (draft, active, completed, paused, archived)
 
 **Response:** `200 OK`
+
+### GET /plans/active
+Get the active plan. **Protected**
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "plan": {
+      "id": "uuid",
+      "name": "My Health Plan",
+      "status": "active",
+      ...
+    },
+    "todayActivities": [...],
+    "weekCompletionRate": 75
+  }
+}
+```
 
 ### POST /plans
 Create a plan. **Protected**
@@ -778,44 +865,37 @@ Create a plan. **Protected**
 **Request Body:**
 ```json
 {
-  "name": "My Health Plan",
-  "goals": ["507f1f77bcf86cd799439011"],
-  "activities": [
-    {
-      "name": "Morning Walk",
-      "type": "exercise",
-      "scheduledDays": [1, 2, 3, 4, 5],
-      "scheduledTime": "07:00",
-      "duration": 30
-    }
-  ]
+  "goalId": "uuid",
+  "name": "My Health Plan"
 }
 ```
 
 **Response:** `201 Created`
 
 ### GET /plans/today
-Get today's activities. **Protected**
+Get today's activities from active plan. **Protected**
 
 **Response:** `200 OK`
 ```json
 {
   "success": true,
   "data": {
-    "date": "2024-12-17",
+    "planId": "uuid",
+    "date": "2025-01-15T10:30:00.000Z",
+    "dayOfWeek": "wednesday",
     "activities": [
       {
-        "id": "activity-1",
-        "name": "Morning Walk",
-        "scheduledTime": "07:00",
-        "completed": false,
-        "type": "exercise"
+        "id": "act_1",
+        "type": "workout",
+        "title": "Strength Training",
+        "duration": 45,
+        "preferredTime": "07:00",
+        "status": "pending",
+        "log": null
       }
     ],
-    "progress": {
-      "completed": 2,
-      "total": 5
-    }
+    "completedCount": 0,
+    "totalCount": 3
   }
 }
 ```
@@ -825,21 +905,65 @@ Get specific plan. **Protected**
 
 **Response:** `200 OK`
 
-### POST /plans/:planId/activate
-Activate a plan. **Protected**
+### GET /plans/:planId/today
+Get today's activities for specific plan. **Protected**
+
+**Response:** `200 OK` (same as GET /plans/today)
+
+### GET /plans/:planId/summary/weekly
+Get weekly summary for a plan. **Protected**
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "week": 1,
+    "weekStartDate": "2025-01-13",
+    "weekEndDate": "2025-01-19",
+    "focus": {
+      "theme": "Foundation",
+      "focus": "Building habits..."
+    },
+    "stats": {
+      "totalActivities": 10,
+      "completed": 7,
+      "skipped": 1,
+      "pending": 2,
+      "completionRate": 70
+    },
+    "activityBreakdown": {
+      "workout": { "completed": 3, "total": 3 },
+      "meal": { "completed": 5, "total": 7 }
+    }
+  }
+}
+```
+
+### GET /plans/:planId/logs
+Get activity logs for a plan. **Protected**
+
+**Query Parameters:**
+- `startDate` - Filter from date
+- `endDate` - Filter to date
+- `activityId` - Filter by activity
 
 **Response:** `200 OK`
 
-### PATCH /plans/:planId/activities/:activityId
-Update an activity. **Protected**
+### PATCH /plans/:planId
+Update a plan. **Protected**
 
 **Request Body:**
 ```json
 {
-  "scheduledTime": "08:00",
-  "duration": 45
+  "status": "paused"
 }
 ```
+
+**Response:** `200 OK`
+
+### POST /plans/:planId/activate
+Activate a plan. **Protected**
 
 **Response:** `200 OK`
 
@@ -849,13 +973,32 @@ Log activity completion. **Protected**
 **Request Body:**
 ```json
 {
-  "completed": true,
+  "status": "completed",
   "notes": "Felt great!",
-  "actualDuration": 35
+  "mood": 4,
+  "actualValue": 45,
+  "duration": 45
 }
 ```
 
 **Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Activity logged successfully",
+  "data": {
+    "log": {
+      "id": "uuid",
+      "activity_id": "act_1",
+      "status": "completed",
+      "completed_at": "2025-01-15T10:30:00.000Z",
+      "mood": 4,
+      "user_notes": "Felt great!"
+    },
+    "feedback": "Great job completing \"Strength Training\"! Keep up the momentum!"
+  }
+}
+```
 
 ### POST /plans/complete-onboarding
 Complete onboarding flow. **Protected**

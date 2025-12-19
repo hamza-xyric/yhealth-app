@@ -45,10 +45,17 @@ export const registerSchema = z.object({
   gender: genderEnum,
 });
 
-// S01.1.2: Social Sign-In
+// S01.1.2: Social Sign-In (via NextAuth)
+// Frontend sends user data from NextAuth session
 export const socialAuthSchema = z.object({
   provider: z.enum(['google', 'apple']),
-  idToken: z.string().min(1, 'ID token is required'),
+  email: z.string().email('Invalid email format'),
+  providerId: z.string().optional(), // Provider user ID (e.g., Google sub)
+  idToken: z.string().optional(), // Legacy support
+  name: z.string().optional(), // Full name from provider
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  avatar: z.string().url().optional().nullable(),
   accessToken: z.string().optional(),
 });
 
@@ -122,6 +129,19 @@ export const verifyEmailSchema = z.object({
   token: z.string().min(1, 'Verification token is required'),
 });
 
+// Verify registration OTP schema
+export const verifyRegistrationSchema = z.object({
+  activationToken: z.string().min(1, 'Activation token is required'),
+  activationCode: z.string()
+    .length(4, 'Verification code must be 4 digits')
+    .regex(/^\d{4}$/, 'Verification code must contain only numbers'),
+});
+
+// Resend registration OTP schema
+export const resendRegistrationOTPSchema = z.object({
+  activationToken: z.string().min(1, 'Activation token is required'),
+});
+
 // Refresh token schema
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required'),
@@ -147,5 +167,7 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+export type VerifyRegistrationInput = z.infer<typeof verifyRegistrationSchema>;
+export type ResendRegistrationOTPInput = z.infer<typeof resendRegistrationOTPSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

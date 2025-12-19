@@ -5,6 +5,7 @@ import assessmentRoutes from './assessment.routes.js';
 import integrationRoutes from './integration.routes.js';
 import preferencesRoutes from './preferences.routes.js';
 import planRoutes from './plan.routes.js';
+import uploadRoutes from './upload.routes.js';
 import { env } from '../config/env.config.js';
 
 const router = Router();
@@ -24,6 +25,7 @@ router.get('/', (_req, res) => {
       integrations: '/api/integrations',
       preferences: '/api/preferences',
       plans: '/api/plans',
+      upload: '/api/upload',
     },
   });
 });
@@ -45,5 +47,8 @@ router.use('/preferences', preferencesRoutes);
 
 // Plan routes (Epic 01 - F1.6)
 router.use('/plans', planRoutes);
+
+// File upload routes
+router.use('/upload', uploadRoutes);
 
 export default router;
