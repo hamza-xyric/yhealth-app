@@ -1,8 +1,8 @@
 # YHealth Project Status
 
-## Current Status: Epic 01 Complete
+## Current Status: Authentication & Profile Management Complete
 
-**Last Updated:** December 2024
+**Last Updated:** December 19, 2025
 
 ---
 
@@ -115,8 +115,8 @@ Coverage:          📊 Pending measurement
 ### Low Priority
 | Item | Description | Effort |
 |------|-------------|--------|
-| Email Verification | Add email verify flow | Medium |
-| Password Reset | Implement reset flow | Medium |
+| ~~Email Verification~~ | ~~Add email verify flow~~ | ~~Medium~~ | ✅ Done |
+| ~~Password Reset~~ | ~~Implement reset flow~~ | ~~Medium~~ | ✅ Done |
 | 2FA | Two-factor authentication | High |
 
 ---
@@ -150,12 +150,65 @@ Coverage:          📊 Pending measurement
 | Category | Count | Status |
 |----------|-------|--------|
 | Health | 3 | ✅ |
-| Auth | 9 | ✅ |
+| Auth | 12 | ✅ |
 | Assessment | 12 | ✅ |
 | Integrations | 8 | ✅ |
 | Preferences | 8 | ✅ |
 | Plans | 9 | ✅ |
-| **Total** | **49** | ✅ |
+| Upload | 1 | ✅ |
+| **Total** | **53** | ✅ |
+
+---
+
+## Recent Updates (December 19, 2025)
+
+### Client Features Added
+| Feature | Status |
+|---------|--------|
+| NextAuth.js Integration | ✅ Complete |
+| Google OAuth | ✅ Complete |
+| Cookie-based Token Storage | ✅ Complete |
+| AuthContext Provider | ✅ Complete |
+| Profile Pages (View/Edit) | ✅ Complete |
+| Avatar Upload | ✅ Complete |
+| Password Reset Flow | ✅ Complete |
+| Phone Number Input (Country Code) | ✅ Complete |
+
+### Server Features Added
+| Feature | Status |
+|---------|--------|
+| Social Auth Endpoint | ✅ Complete |
+| OTP Registration Flow | ✅ Complete |
+| Password Reset Endpoints | ✅ Complete |
+| Avatar Upload (R2 Storage) | ✅ Complete |
+| Email Templates | ✅ Complete |
+
+### New Files Created
+```
+client/
+├── app/
+│   ├── (pages)/profile/         # Profile pages
+│   ├── api/auth/[...nextauth]/  # NextAuth routes
+│   ├── auth/                    # Auth pages
+│   ├── context/AuthContext.tsx  # Auth state
+│   └── reset-password/          # Root reset password
+├── components/
+│   ├── common/avatar-uploader.tsx
+│   └── providers/
+├── hooks/use-auth.ts
+├── lib/
+│   ├── api-client.ts
+│   └── auth.ts
+└── types/next-auth.d.ts
+
+server/
+├── src/
+│   ├── controllers/upload.controller.ts
+│   ├── middlewares/upload.middleware.ts
+│   ├── routes/upload.routes.ts
+│   ├── services/r2.service.ts
+│   └── mails/registrationOTP.ejs
+```
 
 ---
 
@@ -277,5 +330,11 @@ JWT_REFRESH_SECRET=<32+ characters>
 
 ---
 
-*Status Last Updated: December 2024*
+*Status Last Updated: December 19, 2025*
 *Next Review: When Epic 02 begins*
+
+---
+
+## Changelog
+
+- [December 19, 2025](./CHANGELOG-2025-12-19.md) - Authentication, Profile Management, Password Reset
