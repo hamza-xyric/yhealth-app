@@ -43,7 +43,10 @@ interface ActivationTokenPayload {
 /**
  * Generate activation token with 4-digit OTP code
  */
-function createActivationToken(user: RegisterInput): { token: string; activationCode: string } {
+function createActivationToken(user: RegisterInput): {
+  token: string;
+  activationCode: string;
+} {
   const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
   const token = jwt.sign(
     {
@@ -147,6 +150,7 @@ function getPublicProfile(user: ReturnType<typeof mapUserRow>) {
     lastName: user.lastName,
     dateOfBirth: user.dateOfBirth,
     gender: user.gender,
+    phone: user.phone,
     role: user.role,
     avatarUrl: user.avatar,
     isEmailVerified: user.isEmailVerified,
@@ -195,7 +199,8 @@ export const register = asyncHandler(
     };
 
     // Generate activation token with 4-digit OTP
-    const { token: activationToken, activationCode } = createActivationToken(registrationData);
+    const { token: activationToken, activationCode } =
+      createActivationToken(registrationData);
 
     // Send OTP email
     await mailHelper.sendRegistrationOTPEmail(
@@ -226,14 +231,20 @@ export const register = asyncHandler(
  */
 export const verifyRegistration = asyncHandler(
   async (req: AuthenticatedRequest, res: Response) => {
-    const { activationToken, activationCode } = req.body as VerifyRegistrationInput;
+    const { activationToken, activationCode } =
+      req.body as VerifyRegistrationInput;
 
     // Verify and decode the activation token
     let decoded: ActivationTokenPayload;
     try {
-      decoded = jwt.verify(activationToken, env.jwt.secret) as ActivationTokenPayload;
+      decoded = jwt.verify(
+        activationToken,
+        env.jwt.secret
+      ) as ActivationTokenPayload;
     } catch {
-      throw ApiError.badRequest("Invalid or expired verification code. Please register again.");
+      throw ApiError.badRequest(
+        "Invalid or expired verification code. Please register again."
+      );
     }
 
     // Verify the activation code matches
@@ -302,7 +313,10 @@ export const verifyRegistration = asyncHandler(
       user.id,
     ]);
 
-    logger.info("User registered after OTP verification", { userId: user.id, email: user.email });
+    logger.info("User registered after OTP verification", {
+      userId: user.id,
+      email: user.email,
+    });
 
     ApiResponse.created(
       res,
@@ -801,8 +815,6 @@ export const login = asyncHandler(
       [new Date(), tokens.refreshToken, user.id]
     );
 
-    logger.info("User logged in", { userId: user.id });
-
     ApiResponse.success(
       res,
       {
@@ -1084,7 +1096,10 @@ export const resendRegistrationOTP = asyncHandler(
     // Verify and decode the activation token
     let decoded: ActivationTokenPayload;
     try {
-      decoded = jwt.verify(activationToken, env.jwt.secret) as ActivationTokenPayload;
+      decoded = jwt.verify(
+        activationToken,
+        env.jwt.secret
+      ) as ActivationTokenPayload;
     } catch {
       throw ApiError.badRequest("Session expired. Please register again.");
     }
@@ -1148,7 +1163,7 @@ export const updateProfile = asyncHandler(
 
     // Build update fields dynamically
     const updateFields: string[] = [];
-    const values: (string | null)[] = [];
+    const values: (string | Date | null)[] = [];
     let paramIndex = 1;
 
     if (data.firstName !== undefined) {
@@ -1166,6 +1181,14 @@ export const updateProfile = asyncHandler(
     if (data.avatar !== undefined) {
       updateFields.push(`avatar = $${paramIndex++}`);
       values.push(data.avatar);
+    }
+    if (data.dateOfBirth !== undefined) {
+      updateFields.push(`date_of_birth = $${paramIndex++}`);
+      values.push(data.dateOfBirth);
+    }
+    if (data.gender !== undefined) {
+      updateFields.push(`gender = $${paramIndex++}`);
+      values.push(data.gender);
     }
 
     if (updateFields.length === 0) {

@@ -153,6 +153,8 @@ export const updateProfileSchema = z.object({
   lastName: z.string().trim().min(2).max(50).optional(),
   phone: commonSchemas.phone,
   avatar: z.string().url().optional().nullable(),
+  dateOfBirth: z.string().or(z.date()).transform(val => new Date(val)).optional(),
+  gender: z.enum(['male', 'female', 'non_binary', 'prefer_not_to_say']).optional(),
 });
 
 // Types inferred from schemas

@@ -45,16 +45,24 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
 
   const register = useCallback(
-    async (data: RegisterData): Promise<{ success: boolean; activationToken?: string }> => {
+    async (
+      data: RegisterData
+    ): Promise<{ success: boolean; activationToken?: string }> => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await api.post<{ activationToken: string; message: string }>("/auth/register", data);
+        const response = await api.post<{
+          activationToken: string;
+          message: string;
+        }>("/auth/register", data);
 
         if (response.success && response.data?.activationToken) {
           toast.success("Verification code sent to your email!");
-          return { success: true, activationToken: response.data.activationToken };
+          return {
+            success: true,
+            activationToken: response.data.activationToken,
+          };
         }
       } catch (err) {
         const message =
@@ -80,14 +88,18 @@ export function useAuth() {
       try {
         const response = await api.post<{
           user: { email: string };
-          accessToken: string;
-          refreshToken: string;
+          tokens: {
+            accessToken: string;
+            refreshToken: string;
+          };
         }>("/auth/verify-registration", data);
 
         if (response.success && response.data) {
           // Set the token immediately after registration
-          if (response.data.accessToken) {
-            api.setAccessToken(response.data.accessToken);
+          // Backend returns { user, tokens: { accessToken, refreshToken } }
+          const accessToken = response.data.tokens?.accessToken;
+          if (accessToken) {
+            api.setAccessToken(accessToken);
           }
 
           // Sign in with NextAuth to create session
@@ -134,10 +146,45 @@ export function useAuth() {
         }
 
         if (result?.ok) {
-          // Force session refresh to ensure token is available
+          // Wait for NextAuth session to be updated, then check if it has accessToken
           const session = await getSession();
+
           if (session?.accessToken) {
+            // Session has accessToken from JWT callback, use it
             api.setAccessToken(session.accessToken);
+            if (process.env.NODE_ENV === "development") {
+              console.log("[useAuth] Got accessToken from NextAuth session");
+            }
+          } else {
+            // Fallback: call backend login directly to get token
+            // (NextAuth session may not always expose accessToken on the client)
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                "[useAuth] No accessToken in session, fetching from backend"
+              );
+            }
+            try {
+              const loginResponse = await api.post<{
+                user: { email: string };
+                tokens: {
+                  accessToken: string;
+                  refreshToken: string;
+                };
+              }>("/auth/login", data);
+
+              // Backend returns { user, tokens: { accessToken, refreshToken } }
+              const accessToken = loginResponse.data?.tokens?.accessToken;
+              if (loginResponse.success && accessToken) {
+                api.setAccessToken(accessToken);
+              }
+            } catch (tokenError) {
+              // If this fails, we still keep the user logged in via NextAuth,
+              // but API calls requiring Authorization may fail.
+              console.error(
+                "Failed to obtain API access token after login:",
+                tokenError
+              );
+            }
           }
 
           toast.success("Welcome back!");
@@ -294,19 +341,24 @@ export function useAuth() {
   }, []);
 
   const resendRegistrationOTP = useCallback(
-    async (activationToken: string): Promise<{ success: boolean; activationToken?: string }> => {
+    async (
+      activationToken: string
+    ): Promise<{ success: boolean; activationToken?: string }> => {
       setIsLoading(true);
       setError(null);
 
       try {
-        const response = await api.post<{ activationToken: string; message: string }>(
-          "/auth/resend-registration-otp",
-          { activationToken }
-        );
+        const response = await api.post<{
+          activationToken: string;
+          message: string;
+        }>("/auth/resend-registration-otp", { activationToken });
 
         if (response.success && response.data?.activationToken) {
           toast.success("New verification code sent to your email!");
-          return { success: true, activationToken: response.data.activationToken };
+          return {
+            success: true,
+            activationToken: response.data.activationToken,
+          };
         }
       } catch (err) {
         const message =

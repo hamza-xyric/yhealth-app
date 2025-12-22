@@ -1,8 +1,15 @@
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+} from "axios";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9090/api";
 
 // Cookie utilities
 const COOKIE_NAME = "yhealth_access_token";
-const COOKIE_MAX_AGE = 24 * 60 * 60; // 24 hours in seconds
+const COOKIE_MAX_AGE = 3 * 24 * 60 * 60; // 3 days - match JWT_EXPIRES_IN
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -16,7 +23,11 @@ function getCookie(name: string): string | null {
 
 function setCookie(name: string, value: string, maxAge: number): void {
   if (typeof document === "undefined") return;
-  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=Lax; Secure`;
+  // Don't use Secure flag in development (localhost uses HTTP)
+  const isSecure =
+    typeof window !== "undefined" && window.location.protocol === "https:";
+  const secureFlag = isSecure ? "; Secure" : "";
+  document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=Lax${secureFlag}`;
 }
 
 function deleteCookie(name: string): void {
@@ -40,8 +51,10 @@ interface ApiResponse<T> {
   };
 }
 
-interface RequestConfig extends RequestInit {
+interface RequestConfig {
   params?: Record<string, string | number | boolean | undefined>;
+  signal?: AbortSignal;
+  headers?: Record<string, string>;
 }
 
 export class ApiError extends Error {
@@ -60,9 +73,82 @@ class ApiClient {
   private baseUrl: string;
   private accessToken: string | null = null;
   private initialized = false;
+  private axios: AxiosInstance;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+    this.axios = axios.create({
+      baseURL: this.baseUrl,
+      withCredentials: false,
+    });
+
+    // Attach auth token automatically on every request
+    this.axios.interceptors.request.use((config) => {
+      const token = this.getToken();
+
+      const headers = (config.headers =
+        config.headers ?? this.axios.defaults.headers.common);
+
+      // Ensure JSON by default unless caller overrides (uploads override this)
+      const hasContentType =
+        "Content-Type" in headers &&
+        typeof headers["Content-Type"] !== "undefined";
+
+      if (!(config.data instanceof FormData) && !hasContentType) {
+        headers["Content-Type"] = "application/json";
+      }
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      if (process.env.NODE_ENV === "development") {
+        console.debug(
+          "[API Client] Request",
+          config.method,
+          config.url,
+          "hasToken:",
+          !!token
+        );
+      }
+
+      return config;
+    });
+
+    // Normalize errors
+    this.axios.interceptors.response.use(
+      (response) => response,
+      (error: AxiosError<ApiResponse<unknown> & { message?: string; code?: string }>) => {
+        if (error.response) {
+          const status = error.response.status;
+          const payload = error.response.data;
+
+          // Handle both error formats:
+          // 1. { error: { code, message } } - standard format
+          // 2. { code, message } - server format
+          const errorMessage = payload?.error?.message || payload?.message || "Request failed";
+          const errorCode = payload?.error?.code || payload?.code || "REQUEST_FAILED";
+          const errorDetails = payload?.error?.details;
+
+          throw new ApiError(
+            errorMessage,
+            status,
+            errorCode,
+            errorDetails
+          );
+        }
+
+        if (error.request) {
+          throw new ApiError("Network error", 0, "NETWORK_ERROR");
+        }
+
+        throw new ApiError(
+          error.message || "Unexpected error",
+          0,
+          "UNKNOWN_ERROR"
+        );
+      }
+    );
   }
 
   // Initialize token from cookie (call this on client side)
@@ -72,7 +158,10 @@ class ApiClient {
     if (cookieToken) {
       this.accessToken = cookieToken;
       if (process.env.NODE_ENV === "development") {
-        console.log("[API Client] Token loaded from cookie:", `${cookieToken.substring(0, 20)}...`);
+        console.log(
+          "[API Client] Token loaded from cookie:",
+          `${cookieToken.substring(0, 20)}...`
+        );
       }
     }
     this.initialized = true;
@@ -100,81 +189,47 @@ class ApiClient {
     return !!this.getToken();
   }
 
-  private buildUrl(
-    endpoint: string,
-    params?: Record<string, string | number | boolean | undefined>
-  ): string {
-    const url = new URL(`${this.baseUrl}${endpoint}`);
-
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "") {
-          url.searchParams.append(key, String(value));
-        }
-      });
-    }
-
-    return url.toString();
-  }
-
   // Get current token, auto-initializing from cookie if needed
   private getToken(): string | null {
-    if (!this.accessToken && !this.initialized) {
-      this.initFromCookie();
+    // If we have an in-memory token, use it
+    if (this.accessToken) {
+      return this.accessToken;
     }
-    return this.accessToken;
+
+    // Try to read from cookie (even if initialized, token might have been set externally)
+    const cookieToken = getCookie(COOKIE_NAME);
+    if (cookieToken) {
+      this.accessToken = cookieToken;
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          "[API Client] Token recovered from cookie:",
+          `${cookieToken.substring(0, 20)}...`
+        );
+      }
+      return cookieToken;
+    }
+
+    return null;
   }
 
   private async request<T>(
     endpoint: string,
-    config: RequestConfig = {}
+    config: AxiosRequestConfig & RequestConfig = {}
   ): Promise<ApiResponse<T>> {
-    const { params, ...fetchConfig } = config;
-    const url = this.buildUrl(endpoint, params);
-    const token = this.getToken();
-
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      ...config.headers,
+    const axiosConfig: AxiosRequestConfig = {
+      url: endpoint,
+      method: config.method || "GET",
+      params: config.params,
+      data: config.data,
+      signal: config.signal,
+      headers: config.headers,
     };
 
-    if (token) {
-      (headers as Record<string, string>)[
-        "Authorization"
-      ] = `Bearer ${token}`;
-    }
+    const response: AxiosResponse<ApiResponse<T>> = await this.axios.request<
+      ApiResponse<T>
+    >(axiosConfig);
 
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[API Client] ${config.method || "GET"} ${endpoint}`, {
-        hasToken: !!token,
-      });
-    }
-
-    try {
-      const response = await fetch(url, {
-        ...fetchConfig,
-        headers,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new ApiError(
-          data.error?.message || "Request failed",
-          response.status,
-          data.error?.code || "REQUEST_FAILED",
-          data.error?.details
-        );
-      }
-
-      return data;
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-
-      throw new ApiError("Network error", 0, "NETWORK_ERROR");
-    }
+    return response.data;
   }
 
   async get<T>(
@@ -192,7 +247,7 @@ class ApiClient {
     return this.request<T>(endpoint, {
       ...config,
       method: "POST",
-      body: body ? JSON.stringify(body) : undefined,
+      data: body,
     });
   }
 
@@ -204,7 +259,7 @@ class ApiClient {
     return this.request<T>(endpoint, {
       ...config,
       method: "PATCH",
-      body: body ? JSON.stringify(body) : undefined,
+      data: body,
     });
   }
 
@@ -220,47 +275,11 @@ class ApiClient {
     endpoint: string,
     formData: FormData
   ): Promise<ApiResponse<T>> {
-    const url = this.buildUrl(endpoint);
-    const token = this.getToken();
+    const response: AxiosResponse<ApiResponse<T>> = await this.axios.post<
+      ApiResponse<T>
+    >(endpoint, formData);
 
-    const headers: HeadersInit = {};
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[API Client] UPLOAD ${endpoint}`, {
-        hasToken: !!token,
-      });
-    }
-
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers,
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new ApiError(
-          data.error?.message || "Upload failed",
-          response.status,
-          data.error?.code || "UPLOAD_FAILED",
-          data.error?.details
-        );
-      }
-
-      return data;
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-
-      throw new ApiError("Network error", 0, "NETWORK_ERROR");
-    }
+    return response.data;
   }
 
   // Getter for access token (useful for external calls)

@@ -1,5 +1,6 @@
 import "next-auth";
 import "next-auth/jwt";
+import "@auth/core/types";
 
 declare module "next-auth" {
   interface Session {
@@ -14,6 +15,18 @@ declare module "next-auth" {
     onboardingStatus: string;
   }
 
+  interface User {
+    id: string;
+    email: string;
+    name?: string;
+    image?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    onboardingStatus?: string;
+  }
+}
+
+declare module "@auth/core/types" {
   interface User {
     id: string;
     email: string;

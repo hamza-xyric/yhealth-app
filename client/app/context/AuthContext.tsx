@@ -21,8 +21,9 @@ export interface User {
   firstName: string;
   lastName: string;
   avatarUrl: string | null;
-  dateOfBirth: string;
-  gender: string;
+  dateOfBirth: string | null;
+  gender: string | null;
+  phone: string | null;
   role: string;
   isEmailVerified: boolean;
   onboardingStatus: string;
@@ -90,7 +91,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log("[AuthContext] Session state:", {
         status,
         hasSession: !!session,
-        accessToken: session?.accessToken ? `${session.accessToken.substring(0, 20)}...` : null,
+        accessToken: session?.accessToken
+          ? `${session.accessToken.substring(0, 20)}...`
+          : null,
       });
     }
 
@@ -122,7 +125,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (session.accessToken) {
       api.setAccessToken(session.accessToken);
     } else {
-      console.warn("[AuthContext] Session authenticated but no accessToken found!");
+      // Try to recover token from cookie (set during login via use-auth.ts)
+      const hasTokenInCookie = api.hasToken();
+      if (hasTokenInCookie) {
+        console.log(
+          "[AuthContext] Session missing accessToken, but found token in cookie"
+        );
+      } else {
+        console.warn(
+          "[AuthContext] Session authenticated but no accessToken found (and none in cookie)!"
+        );
+      }
     }
 
     // Use fetched user if available, otherwise create from session
@@ -132,8 +145,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       firstName: session.user.name?.split(" ")[0] || "",
       lastName: session.user.name?.split(" ").slice(1).join(" ") || "",
       avatarUrl: session.user.image || null,
-      dateOfBirth: "",
-      gender: "",
+      dateOfBirth: null,
+      gender: null,
+      phone: null,
       role: "user",
       isEmailVerified: true,
       onboardingStatus: session.onboardingStatus || "pending",
@@ -141,11 +155,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       updatedAt: "",
     };
 
+    // Use session token or fallback to API client token (from cookie)
+    const effectiveAccessToken = session.accessToken || api.getAccessToken();
+
     return {
       user,
       isAuthenticated: true,
       isLoading: false,
-      accessToken: session.accessToken,
+      accessToken: effectiveAccessToken,
       refreshToken: session.refreshToken,
       onboardingStatus:
         fetchedUser?.onboardingStatus || session.onboardingStatus,
@@ -173,7 +190,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
     prevStatusRef.current = status;
 
-    // Only fetch if session changed (new login)
+    // Only fetch if session changed (new login) and we have a valid token
     if (
       status === "authenticated" &&
       session?.accessToken &&
@@ -181,12 +198,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     ) {
       prevSessionIdRef.current = currentSessionId;
 
+      // Ensure token is set before fetching
+      api.setAccessToken(session.accessToken);
+
       // Async fetch with cleanup check
       const doFetch = async () => {
         try {
-          const response = await api.get<User>("/auth/me");
-          if (isMounted && response.success && response.data) {
-            setFetchedUser(response.data);
+          // Backend returns { user: {...} } structure
+          const response = await api.get<{ user: User }>("/auth/me");
+          if (isMounted && response.success && response.data?.user) {
+            setFetchedUser(response.data.user);
           }
         } catch (error) {
           console.error("Failed to fetch user profile:", error);
@@ -195,9 +216,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             error instanceof ApiError &&
             error.statusCode === 401
           ) {
+            // Token expired or invalid - sign out
             await signOut({ redirect: false });
             setFetchedUser(null);
           }
+          // For other errors, just log and continue with session data
         }
       };
       doFetch();
@@ -266,9 +289,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!accessToken) return;
 
     try {
-      const response = await api.get<User>("/auth/me");
-      if (response.success && response.data) {
-        setFetchedUser(response.data);
+      // Backend returns { user: {...} } structure
+      const response = await api.get<{ user: User }>("/auth/me");
+      if (response.success && response.data?.user) {
+        setFetchedUser(response.data.user);
       }
     } catch (error) {
       console.error("Failed to refresh user profile:", error);
@@ -289,9 +313,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!authState.user) return "?";
     const first = authState.user.firstName?.[0] || "";
     const last = authState.user.lastName?.[0] || "";
-    return (
-      (first + last).toUpperCase() || authState.user.email[0].toUpperCase()
-    );
+    const initials = (first + last).toUpperCase();
+    if (initials) return initials;
+    // Fallback to email first character
+    return authState.user.email?.[0]?.toUpperCase() || "?";
   }, [authState.user]);
 
   // Get display name
@@ -302,7 +327,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         authState.user.lastName || ""
       }`.trim();
     }
-    return authState.user.email;
+    return authState.user.email || "";
   }, [authState.user]);
 
   // Check if onboarding is complete

@@ -30,21 +30,54 @@ export const authConfig: NextAuthConfig = {
 
           const data = await response.json();
 
+          // Debug: log the full response structure
+          if (process.env.NODE_ENV === "development") {
+            console.log("[NextAuth Authorize] Backend response:", JSON.stringify(data, null, 2));
+          }
+
           if (!response.ok || !data.success) {
             throw new Error(data.error?.message || "Invalid credentials");
           }
 
-          return {
-            id: data.data.user.id,
-            email: data.data.user.email,
-            name: data.data.user.firstName
-              ? `${data.data.user.firstName} ${data.data.user.lastName || ""}`
-              : data.data.user.email,
-            image: data.data.user.avatarUrl,
-            accessToken: data.data.accessToken,
-            refreshToken: data.data.refreshToken,
-            onboardingStatus: data.data.user.onboardingStatus,
+          // Extract tokens - backend returns { user, tokens: { accessToken, refreshToken } }
+          const responseData = data.data || data;
+          const tokens = responseData.tokens || responseData;
+          const accessToken = tokens.accessToken;
+          const refreshToken = tokens.refreshToken;
+          const user = responseData.user;
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("[NextAuth Authorize] Extracted tokens:", {
+              hasAccessToken: !!accessToken,
+              hasRefreshToken: !!refreshToken,
+              hasUser: !!user,
+            });
+          }
+
+          const userResult = {
+            id: user.id,
+            email: user.email,
+            name: user.firstName
+              ? `${user.firstName} ${user.lastName || ""}`
+              : user.email,
+            image: user.avatarUrl,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            onboardingStatus: user.onboardingStatus,
           };
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("[NextAuth Authorize] Returning user:", {
+              id: userResult.id,
+              email: userResult.email,
+              hasAccessToken: !!userResult.accessToken,
+              accessTokenPreview: userResult.accessToken
+                ? `${userResult.accessToken.substring(0, 20)}...`
+                : "none",
+            });
+          }
+
+          return userResult;
         } catch (error) {
           console.error("Auth error:", error);
           return null;
@@ -114,45 +147,47 @@ export const authConfig: NextAuthConfig = {
 
       // Initial sign in - user object contains data from authorize callback
       if (user) {
-        token.id = user.id;
         // For credentials provider, user.accessToken comes from authorize()
-        if (user.accessToken) {
-          token.accessToken = user.accessToken;
-        }
-        if (user.refreshToken) {
-          token.refreshToken = user.refreshToken;
-        }
-        if (user.onboardingStatus) {
-          token.onboardingStatus = user.onboardingStatus;
-        }
+        token.id = user.id;
+        token.accessToken = user.accessToken || token.accessToken;
+        token.refreshToken = user.refreshToken || token.refreshToken;
+        token.onboardingStatus = user.onboardingStatus || token.onboardingStatus;
 
         if (process.env.NODE_ENV === "development") {
           console.log("[NextAuth JWT] Set from user:", {
             accessToken: token.accessToken ? `${String(token.accessToken).substring(0, 20)}...` : "none",
           });
         }
-      }
 
-      // Handle Google sign-in - get tokens from backendData
-      if (account?.provider === "google" && user) {
-        const backendData = (user as unknown as Record<string, unknown>).backendData as {
-          user: { id: string; onboardingStatus: string };
-          accessToken: string;
-          refreshToken: string;
-        } | undefined;
+        // Handle Google sign-in - get tokens from backendData
+        if (account?.provider === "google") {
+          const backendData = (user as unknown as Record<string, unknown>).backendData as {
+            user: { id: string; onboardingStatus: string };
+            accessToken: string;
+            refreshToken: string;
+          } | undefined;
 
-        if (backendData) {
-          token.id = backendData.user.id;
-          token.accessToken = backendData.accessToken;
-          token.refreshToken = backendData.refreshToken;
-          token.onboardingStatus = backendData.user.onboardingStatus;
+          if (backendData) {
+            token.id = backendData.user.id;
+            token.accessToken = backendData.accessToken;
+            token.refreshToken = backendData.refreshToken;
+            token.onboardingStatus = backendData.user.onboardingStatus;
 
-          if (process.env.NODE_ENV === "development") {
-            console.log("[NextAuth JWT] Set from Google backendData:", {
-              accessToken: token.accessToken ? `${String(token.accessToken).substring(0, 20)}...` : "none",
-            });
+            if (process.env.NODE_ENV === "development") {
+              console.log("[NextAuth JWT] Set from Google backendData:", {
+                accessToken: token.accessToken ? `${String(token.accessToken).substring(0, 20)}...` : "none",
+              });
+            }
           }
         }
+      }
+
+      // Ensure accessToken persists between requests
+      if (process.env.NODE_ENV === "development" && !user) {
+        console.log("[NextAuth JWT] Returning existing token:", {
+          hasAccessToken: !!token.accessToken,
+          accessToken: token.accessToken ? `${String(token.accessToken).substring(0, 20)}...` : "none",
+        });
       }
 
       return token;
@@ -161,16 +196,27 @@ export const authConfig: NextAuthConfig = {
       // Debug logging
       if (process.env.NODE_ENV === "development") {
         console.log("[NextAuth Session] Callback:", {
-          tokenAccessToken: token.accessToken ? "present" : "missing",
+          tokenId: token.id,
+          tokenAccessToken: token.accessToken ? `${String(token.accessToken).substring(0, 20)}...` : "missing",
+          tokenRefreshToken: token.refreshToken ? "present" : "missing",
+          tokenOnboardingStatus: token.onboardingStatus,
         });
       }
 
-      if (token) {
-        session.user.id = token.id as string;
-        session.accessToken = token.accessToken as string;
-        session.refreshToken = token.refreshToken as string;
-        session.onboardingStatus = token.onboardingStatus as string;
+      // Always copy token values to session
+      session.user.id = token.id as string;
+      session.accessToken = token.accessToken as string || "";
+      session.refreshToken = token.refreshToken as string || "";
+      session.onboardingStatus = token.onboardingStatus as string || "pending";
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("[NextAuth Session] Returning session:", {
+          userId: session.user.id,
+          hasAccessToken: !!session.accessToken,
+          accessToken: session.accessToken ? `${session.accessToken.substring(0, 20)}...` : "none",
+        });
       }
+
       return session;
     },
   },
@@ -182,8 +228,23 @@ export const authConfig: NextAuthConfig = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours
+    maxAge: 3 * 24 * 60 * 60, // 3 days - match JWT_EXPIRES_IN
   },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production"
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 3 * 24 * 60 * 60, // 3 days
+      },
+    },
+  },
+  trustHost: true,
   debug: process.env.NODE_ENV === "development",
 };
 

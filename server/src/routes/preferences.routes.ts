@@ -33,6 +33,13 @@ router.put(
   preferencesController.updateAllPreferences
 );
 
+// Update preferences (partial - PATCH method)
+router.patch(
+  '/',
+  validate(updatePreferencesSchema),
+  preferencesController.updateAllPreferences
+);
+
 // ============================================
 // S01.5.1: Notification Preferences
 // ============================================

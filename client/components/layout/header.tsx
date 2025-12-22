@@ -13,6 +13,8 @@ import {
   LogOut,
   LayoutDashboard,
   ChevronDown,
+  Rocket,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -94,7 +96,7 @@ export function Header() {
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         isScrolled
           ? "glass border-b border-white/10 shadow-lg shadow-primary/5"
-          : "bg-transparent"
+          : "bg-white"
       )}
     >
       {/* Gradient line at top when scrolled */}
@@ -228,6 +230,26 @@ export function Header() {
 
                       <DropdownMenuItem
                         asChild
+                        className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-emerald-500/10 hover:bg-emerald-500/10 transition-colors group"
+                      >
+                        <Link
+                          href="/onboarding"
+                          className="flex items-center gap-3"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                            <Rocket className="w-4 h-4 text-emerald-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Onboarding</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              Setup your health plan
+                            </p>
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        asChild
                         className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-purple-500/10 hover:bg-purple-500/10 transition-colors group"
                       >
                         <Link
@@ -241,6 +263,23 @@ export function Header() {
                             <p className="text-sm font-medium">Profile</p>
                             <p className="text-[10px] text-muted-foreground">
                               Manage your account
+                            </p>
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        asChild
+                        className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-cyan-500/10 hover:bg-cyan-500/10 transition-colors group"
+                      >
+                        <Link href="/goals" className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center group-hover:bg-cyan-500/20 transition-colors">
+                            <Target className="w-4 h-4 text-cyan-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">My Goals</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              Track your progress
                             </p>
                           </div>
                         </Link>
@@ -406,6 +445,25 @@ export function Header() {
                       >
                         <LayoutDashboard className="w-5 h-5" />
                         Dashboard
+                      </Link>
+                      <Link
+                        href="/onboarding"
+                        className="flex items-center gap-3 py-3 px-4 text-muted-foreground hover:text-foreground hover:bg-emerald-500/10 rounded-xl transition-all"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Rocket className="w-5 h-5 text-emerald-500" />
+                        <span>Onboarding</span>
+                        <span className="ml-auto px-2 py-0.5 text-[10px] font-medium bg-emerald-500/20 text-emerald-400 rounded-full">
+                          New
+                        </span>
+                      </Link>
+                      <Link
+                        href="/goals"
+                        className="flex items-center gap-3 py-3 px-4 text-muted-foreground hover:text-foreground hover:bg-cyan-500/10 rounded-xl transition-all"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Target className="w-5 h-5 text-cyan-500" />
+                        My Goals
                       </Link>
                       <Link
                         href={`/profile/${user?.id}`}

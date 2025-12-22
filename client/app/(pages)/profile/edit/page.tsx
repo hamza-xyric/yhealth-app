@@ -9,6 +9,7 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
+import { format, parse, isValid } from "date-fns";
 import {
   ArrowLeft,
   User,
@@ -23,6 +24,11 @@ import {
   Pencil,
   X,
   Check,
+  Calendar,
+  Heart,
+  Users,
+  CalendarDays,
+  UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +43,19 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { AvatarUploader } from "@/components/common/avatar-uploader";
@@ -44,6 +63,14 @@ import { useAuth } from "@/app/context/AuthContext";
 import { api, ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+
+// Gender options with icons
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male", icon: "♂️" },
+  { value: "female", label: "Female", icon: "♀️" },
+  { value: "non_binary", label: "Non-Binary", icon: "⚧️" },
+  { value: "prefer_not_to_say", label: "Prefer not to say", icon: "🔒" },
+];
 
 // Form validation schema with phone validation
 const profileFormSchema = z.object({
@@ -62,6 +89,8 @@ const profileFormSchema = z.object({
       (val) => !val || isValidPhoneNumber(val),
       "Please enter a valid phone number"
     ),
+  dateOfBirth: z.date().optional().nullable(),
+  gender: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -72,7 +101,7 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.08,
     },
   },
 };
@@ -93,7 +122,7 @@ function EditProfileSkeleton() {
             <Skeleton className="h-4 w-56" />
           </div>
         </div>
-        <Skeleton className="h-[700px] w-full rounded-3xl" />
+        <Skeleton className="h-[800px] w-full rounded-3xl" />
       </div>
     </div>
   );
@@ -140,11 +169,45 @@ function StyledPhoneInput({
   );
 }
 
+// Animated Section Header
+function SectionHeader({
+  icon: Icon,
+  iconColor,
+  iconBg,
+  title,
+  subtitle,
+}: {
+  icon: React.ElementType;
+  iconColor: string;
+  iconBg: string;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 mb-6">
+      <motion.div
+        whileHover={{ scale: 1.1, rotate: 5 }}
+        className={cn(
+          "w-12 h-12 rounded-xl flex items-center justify-center",
+          iconBg
+        )}
+      >
+        <Icon className={cn("w-6 h-6", iconColor)} />
+      </motion.div>
+      <div>
+        <h3 className="font-semibold text-lg">{title}</h3>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function EditProfilePage() {
   const router = useRouter();
   const { user, isLoading, getInitials, updateUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeField, setActiveField] = useState<string | null>(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const isHydrated = useHydrated();
 
   const form = useForm<ProfileFormValues>({
@@ -153,26 +216,37 @@ export default function EditProfilePage() {
       firstName: "",
       lastName: "",
       phone: "",
+      dateOfBirth: null,
+      gender: "",
     },
   });
 
-  // Update form when user data is available
+  // Update form when user data is available - prefill all fields
   useEffect(() => {
     if (user) {
+      let dateOfBirth: Date | null = null;
+      if (user.dateOfBirth) {
+        const parsedDate = new Date(user.dateOfBirth);
+        if (isValid(parsedDate)) {
+          dateOfBirth = parsedDate;
+        }
+      }
+
       form.reset({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
-        phone: "",
+        phone: user.phone || "",
+        dateOfBirth: dateOfBirth,
+        gender: user.gender || "",
       });
     }
   }, [user, form]);
 
   const handleAvatarUpload = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("avatar", file);
 
     try {
-      // Use API client's upload method which handles auth token automatically
       const response = await api.upload<{ publicUrl?: string; url?: string }>(
         "/upload/avatar",
         formData
@@ -188,7 +262,8 @@ export default function EditProfilePage() {
 
       return avatarUrl || "";
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : "Failed to upload avatar";
+      const message =
+        error instanceof ApiError ? error.message : "Failed to upload avatar";
       toast.error(message);
       throw new Error(message);
     }
@@ -209,7 +284,7 @@ export default function EditProfilePage() {
     setIsSubmitting(true);
 
     try {
-      const updateData: Record<string, string | undefined> = {
+      const updateData: Record<string, string | Date | undefined | null> = {
         firstName: data.firstName,
         lastName: data.lastName,
       };
@@ -217,12 +292,21 @@ export default function EditProfilePage() {
       if (data.phone) {
         updateData.phone = data.phone;
       }
+      if (data.dateOfBirth) {
+        updateData.dateOfBirth = data.dateOfBirth;
+      }
+      if (data.gender) {
+        updateData.gender = data.gender;
+      }
 
       await api.patch("/auth/profile", updateData);
 
       updateUser({
         firstName: data.firstName,
         lastName: data.lastName,
+        phone: data.phone || null,
+        dateOfBirth: data.dateOfBirth?.toISOString() || null,
+        gender: data.gender || null,
       });
 
       toast.success("Profile updated successfully");
@@ -249,7 +333,9 @@ export default function EditProfilePage() {
           <div className="w-16 h-16 mx-auto rounded-full bg-muted/50 flex items-center justify-center">
             <User className="w-8 h-8 text-muted-foreground" />
           </div>
-          <p className="text-muted-foreground">Please sign in to edit your profile.</p>
+          <p className="text-muted-foreground">
+            Please sign in to edit your profile.
+          </p>
           <Button asChild>
             <Link href="/auth/signin">Sign In</Link>
           </Button>
@@ -261,19 +347,54 @@ export default function EditProfilePage() {
   const completionItems = [
     { label: "Profile Photo", done: !!user.avatarUrl },
     { label: "Full Name", done: !!(user.firstName && user.lastName) },
+    { label: "Date of Birth", done: !!user.dateOfBirth },
+    { label: "Gender", done: !!user.gender },
     { label: "Email Verified", done: user.isEmailVerified },
   ];
   const completionPercentage = Math.round(
-    (completionItems.filter((i) => i.done).length / completionItems.length) * 100
+    (completionItems.filter((i) => i.done).length / completionItems.length) *
+      100
   );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl" />
+        <motion.div
+          animate={{
+            y: [0, -8, 0],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            y: [0, -8, 0],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5,
+          }}
+          className="absolute top-1/3 -left-40 w-80 h-80 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            y: [0, -8, 0],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+          className="absolute -bottom-40 right-1/4 w-96 h-96 bg-gradient-to-br from-pink-500/10 to-rose-500/10 rounded-full blur-3xl"
+        />
       </div>
 
       <div className="relative container mx-auto px-4 py-8 max-w-3xl">
@@ -288,14 +409,14 @@ export default function EditProfilePage() {
               variant="ghost"
               size="icon"
               asChild
-              className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+              className="rounded-full hover:bg-primary/10 hover:text-primary transition-all duration-300 hover:scale-110"
             >
               <Link href="/profile">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
             </Button>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text">
                 Edit Profile
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -309,35 +430,57 @@ export default function EditProfilePage() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20"
+            whileHover={{ scale: 1.05 }}
+            className="hidden md:flex items-center gap-3 px-4 py-2 rounded-2xl bg-gradient-to-r from-primary/10 to-purple-500/10 border border-primary/20 backdrop-blur-sm"
           >
-            <div className="relative w-8 h-8">
-              <svg className="w-8 h-8 -rotate-90">
+            <div className="relative w-10 h-10">
+              <svg className="w-10 h-10 -rotate-90">
                 <circle
-                  cx="16"
-                  cy="16"
-                  r="12"
+                  cx="20"
+                  cy="20"
+                  r="16"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="3"
                   className="text-muted/30"
                 />
-                <circle
-                  cx="16"
-                  cy="16"
-                  r="12"
+                <motion.circle
+                  cx="20"
+                  cy="20"
+                  r="16"
                   fill="none"
-                  stroke="currentColor"
+                  stroke="url(#progressGradient)"
                   strokeWidth="3"
-                  strokeDasharray={`${(completionPercentage / 100) * 75.4} 75.4`}
-                  className="text-primary"
+                  strokeLinecap="round"
+                  initial={{ strokeDasharray: "0 100.53" }}
+                  animate={{
+                    strokeDasharray: `${
+                      (completionPercentage / 100) * 100.53
+                    } 100.53`,
+                  }}
+                  transition={{ duration: 1, delay: 0.5 }}
                 />
+                <defs>
+                  <linearGradient
+                    id="progressGradient"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                  >
+                    <stop offset="0%" stopColor="hsl(var(--primary))" />
+                    <stop offset="100%" stopColor="#a855f7" />
+                  </linearGradient>
+                </defs>
               </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">
                 {completionPercentage}%
               </span>
             </div>
-            <span className="text-xs font-medium text-primary">Complete</span>
+            <div className="text-xs">
+              <p className="font-semibold text-primary">Profile</p>
+              <p className="text-muted-foreground">Complete</p>
+            </div>
           </motion.div>
         </motion.div>
 
@@ -350,48 +493,73 @@ export default function EditProfilePage() {
         >
           {/* Avatar Section */}
           <motion.div variants={itemVariants}>
-            <Card className="border-0 bg-card/60 backdrop-blur-xl shadow-2xl shadow-primary/5 overflow-hidden">
-              {/* Gradient Header */}
-              <div className="relative h-36 md:h-44">
+            <Card className="border-0 bg-card/60 backdrop-blur-xl pt-0 shadow-2xl shadow-primary/5 overflow-hidden">
+              {/* Gradient Header with Pattern */}
+              <div className="relative h-40 md:h-48">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-500 to-pink-500" />
-                <div className="absolute inset-0 bg-[url('/images/pattern.svg')] opacity-10" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.08),transparent_50%)]" />
 
-                {/* Floating Shapes */}
+                {/* Animated Shapes */}
                 <motion.div
                   animate={{
-                    y: [0, -10, 0],
-                    rotate: [0, 5, 0]
+                    y: [0, -15, 0],
+                    rotate: [0, 10, 0],
                   }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute top-4 right-8 w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20"
+                  transition={{
+                    duration: 5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="absolute top-4 right-8 w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-sm border border-white/20"
                 />
                 <motion.div
                   animate={{
-                    y: [0, 10, 0],
-                    rotate: [0, -5, 0]
+                    y: [0, 15, 0],
+                    rotate: [0, -10, 0],
                   }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                  className="absolute bottom-8 right-24 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20"
+                  transition={{
+                    duration: 6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="absolute bottom-8 right-28 w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm border border-white/20"
+                />
+                <motion.div
+                  animate={{
+                    scale: [1, 1.2, 1],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="absolute top-12 right-48 w-8 h-8 rounded-full bg-white/20"
                 />
 
                 {/* Avatar */}
                 <div className="absolute -bottom-16 left-8 md:left-12">
                   <div className="relative">
-                    <AvatarUploader
-                      currentAvatar={user.avatarUrl}
-                      fallback={getInitials()}
-                      onUpload={handleAvatarUpload}
-                      onRemove={handleAvatarRemove}
-                      size="xl"
-                    />
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ delay: 0.5, type: "spring" }}
-                      className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg"
+                      transition={{ type: "spring", delay: 0.3 }}
                     >
-                      <Camera className="w-4 h-4 text-white" />
+                      <AvatarUploader
+                        currentAvatar={user.avatarUrl}
+                        fallback={getInitials()}
+                        onUpload={handleAvatarUpload}
+                        onRemove={handleAvatarRemove}
+                        size="xl"
+                      />
+                    </motion.div>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.6, type: "spring" }}
+                      className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg shadow-primary/30"
+                    >
+                      <Camera className="w-5 h-5 text-white" />
                     </motion.div>
                   </div>
                 </div>
@@ -401,18 +569,31 @@ export default function EditProfilePage() {
               <CardContent className="pt-20 pb-6 px-8">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h2 className="text-xl font-bold">
+                    <motion.h2
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className="text-xl font-bold"
+                    >
                       {user.firstName} {user.lastName}
-                    </h2>
-                    <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                    </motion.h2>
+                    <motion.p
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 }}
+                      className="text-sm text-muted-foreground flex items-center gap-2 mt-1"
+                    >
                       {user.email}
                       {user.isEmailVerified && (
-                        <Badge variant="secondary" className="bg-green-500/10 text-green-500 border-green-500/20 text-[10px] px-1.5 py-0">
+                        <Badge
+                          variant="secondary"
+                          className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px] px-1.5 py-0"
+                        >
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Verified
                         </Badge>
                       )}
-                    </p>
+                    </motion.p>
                   </div>
                 </div>
               </CardContent>
@@ -424,20 +605,19 @@ export default function EditProfilePage() {
             <Card className="border-0 bg-card/60 backdrop-blur-xl shadow-2xl shadow-primary/5">
               <CardContent className="p-6 md:p-8">
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                  <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-10"
+                  >
                     {/* Personal Information Section */}
                     <div className="space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
-                          <User className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Personal Information</h3>
-                          <p className="text-xs text-muted-foreground">
-                            Your basic profile details
-                          </p>
-                        </div>
-                      </div>
+                      <SectionHeader
+                        icon={UserCircle}
+                        iconColor="text-primary"
+                        iconBg="bg-gradient-to-br from-primary/20 to-purple-500/20"
+                        title="Personal Information"
+                        subtitle="Your basic profile details"
+                      />
 
                       <div className="grid gap-6 md:grid-cols-2">
                         <FormField
@@ -445,19 +625,22 @@ export default function EditProfilePage() {
                           name="firstName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm font-medium">
+                              <FormLabel className="text-sm font-medium flex items-center gap-2">
                                 First Name
+                                <span className="text-destructive">*</span>
                               </FormLabel>
                               <FormControl>
                                 <div className="relative group">
                                   <Input
-                                    placeholder="John"
+                                    placeholder="Enter your first name"
                                     className={cn(
                                       "h-12 pl-4 pr-10 rounded-xl border-0 bg-muted/50",
-                                      "transition-all duration-200",
+                                      "transition-all duration-300",
                                       "hover:bg-muted/70 focus:bg-muted/70",
                                       "focus-visible:ring-2 focus-visible:ring-primary/50",
-                                      activeField === "firstName" && "ring-2 ring-primary/50"
+                                      "group-hover:shadow-md",
+                                      activeField === "firstName" &&
+                                        "ring-2 ring-primary/50 shadow-lg shadow-primary/10"
                                     )}
                                     {...field}
                                     onFocus={() => setActiveField("firstName")}
@@ -479,19 +662,22 @@ export default function EditProfilePage() {
                           name="lastName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-sm font-medium">
+                              <FormLabel className="text-sm font-medium flex items-center gap-2">
                                 Last Name
+                                <span className="text-destructive">*</span>
                               </FormLabel>
                               <FormControl>
                                 <div className="relative group">
                                   <Input
-                                    placeholder="Doe"
+                                    placeholder="Enter your last name"
                                     className={cn(
                                       "h-12 pl-4 pr-10 rounded-xl border-0 bg-muted/50",
-                                      "transition-all duration-200",
+                                      "transition-all duration-300",
                                       "hover:bg-muted/70 focus:bg-muted/70",
                                       "focus-visible:ring-2 focus-visible:ring-primary/50",
-                                      activeField === "lastName" && "ring-2 ring-primary/50"
+                                      "group-hover:shadow-md",
+                                      activeField === "lastName" &&
+                                        "ring-2 ring-primary/50 shadow-lg shadow-primary/10"
                                     )}
                                     {...field}
                                     onFocus={() => setActiveField("lastName")}
@@ -510,31 +696,158 @@ export default function EditProfilePage() {
                       </div>
                     </div>
 
+                    {/* Demographics Section */}
+                    <div className="space-y-6">
+                      <SectionHeader
+                        icon={Heart}
+                        iconColor="text-rose-500"
+                        iconBg="bg-gradient-to-br from-rose-500/20 to-pink-500/20"
+                        title="Demographics"
+                        subtitle="Help us personalize your health journey"
+                      />
+
+                      <div className="grid gap-6 md:grid-cols-2">
+                        {/* Date of Birth */}
+                        <FormField
+                          control={form.control}
+                          name="dateOfBirth"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <FormLabel className="text-sm font-medium flex items-center gap-2">
+                                <CalendarDays className="w-4 h-4 text-rose-500" />
+                                Date of Birth
+                              </FormLabel>
+                              <Popover
+                                open={calendarOpen}
+                                onOpenChange={setCalendarOpen}
+                              >
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant="outline"
+                                      className={cn(
+                                        "h-12 w-full justify-start text-left font-normal rounded-xl border-0 bg-muted/50",
+                                        "hover:bg-muted/70 focus:bg-muted/70",
+                                        "transition-all duration-300",
+                                        "focus-visible:ring-2 focus-visible:ring-primary/50",
+                                        !field.value && "text-muted-foreground"
+                                      )}
+                                    >
+                                      <Calendar className="mr-3 h-4 w-4 text-rose-500" />
+                                      {field.value ? (
+                                        format(field.value, "MMMM d, yyyy")
+                                      ) : (
+                                        <span>Select your birth date</span>
+                                      )}
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="w-auto p-0 rounded-xl"
+                                  align="start"
+                                >
+                                  <CalendarComponent
+                                    mode="single"
+                                    selected={field.value || undefined}
+                                    onSelect={(date) => {
+                                      field.onChange(date);
+                                      setCalendarOpen(false);
+                                    }}
+                                    disabled={(date) =>
+                                      date > new Date() ||
+                                      date < new Date("1900-01-01")
+                                    }
+                                    initialFocus
+                                    captionLayout="dropdown"
+                                    fromYear={1900}
+                                    toYear={new Date().getFullYear()}
+                                    className="rounded-xl"
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <FormDescription className="text-xs">
+                                Used for age-appropriate health recommendations
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Gender */}
+                        <FormField
+                          control={form.control}
+                          name="gender"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium flex items-center gap-2">
+                                <Users className="w-4 h-4 text-rose-500" />
+                                Gender
+                              </FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger
+                                    className={cn(
+                                      "h-12 rounded-xl border-0 bg-muted/50",
+                                      "hover:bg-muted/70 focus:bg-muted/70",
+                                      "transition-all duration-300",
+                                      "focus:ring-2 focus:ring-primary/50"
+                                    )}
+                                  >
+                                    <SelectValue placeholder="Select your gender" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="rounded-xl">
+                                  {GENDER_OPTIONS.map((option) => (
+                                    <SelectItem
+                                      key={option.value}
+                                      value={option.value}
+                                      className="rounded-lg"
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        <span>{option.icon}</span>
+                                        <span>{option.label}</span>
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormDescription className="text-xs">
+                                Helps personalize health insights
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+
                     {/* Contact Information Section */}
                     <div className="space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
-                          <Mail className="w-5 h-5 text-blue-500" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Contact Information</h3>
-                          <p className="text-xs text-muted-foreground">
-                            How we can reach you
-                          </p>
-                        </div>
-                      </div>
+                      <SectionHeader
+                        icon={Mail}
+                        iconColor="text-blue-500"
+                        iconBg="bg-gradient-to-br from-blue-500/20 to-cyan-500/20"
+                        title="Contact Information"
+                        subtitle="How we can reach you"
+                      />
 
                       {/* Email (Read-only) */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">
+                        <Label className="text-sm font-medium flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-blue-500" />
                           Email Address
                         </Label>
                         <div className="relative">
                           <div className="h-12 px-4 rounded-xl bg-muted/30 border border-dashed border-muted-foreground/20 flex items-center justify-between">
-                            <span className="text-muted-foreground">{user.email}</span>
+                            <span className="text-muted-foreground">
+                              {user.email}
+                            </span>
                             <div className="flex items-center gap-2">
                               {user.isEmailVerified && (
-                                <span className="flex items-center gap-1 text-xs text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
+                                <span className="flex items-center gap-1 text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full">
                                   <CheckCircle className="w-3 h-3" />
                                   Verified
                                 </span>
@@ -542,8 +855,10 @@ export default function EditProfilePage() {
                               <Shield className="w-4 h-4 text-muted-foreground/50" />
                             </div>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Email is linked to your account and cannot be changed
+                          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                            <Shield className="w-3 h-3" />
+                            Email is linked to your account and cannot be
+                            changed
                           </p>
                         </div>
                       </div>
@@ -555,9 +870,12 @@ export default function EditProfilePage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-sm font-medium flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-primary" />
+                              <Phone className="w-4 h-4 text-blue-500" />
                               Phone Number
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 font-normal"
+                              >
                                 Optional
                               </Badge>
                             </FormLabel>
@@ -569,7 +887,8 @@ export default function EditProfilePage() {
                               />
                             </FormControl>
                             <FormDescription className="text-xs">
-                              Used for WhatsApp coaching notifications and account recovery
+                              Used for WhatsApp coaching notifications and
+                              account recovery
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -577,35 +896,45 @@ export default function EditProfilePage() {
                       />
                     </div>
 
-                    {/* Tips Card */}
+                    {/* Completion Tips Card */}
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.4 }}
-                      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 border border-primary/10 p-5"
+                      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 border border-primary/10 p-6"
                     >
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                      <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-br from-pink-500/20 to-rose-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+
                       <div className="relative flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center flex-shrink-0">
-                          <Sparkles className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
+                        <motion.div
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/30"
+                        >
+                          <Sparkles className="w-6 h-6 text-white" />
+                        </motion.div>
+                        <div className="flex-1">
                           <h4 className="font-semibold text-sm mb-1">
                             Complete Your Profile
                           </h4>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            A complete profile helps your AI health coach provide
-                            personalized recommendations tailored to your unique journey.
+                          <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                            A complete profile helps your AI health coach
+                            provide personalized recommendations tailored to
+                            your unique journey.
                           </p>
-                          <div className="flex flex-wrap gap-2 mt-3">
+                          <div className="flex flex-wrap gap-2">
                             {completionItems.map((item, index) => (
-                              <span
+                              <motion.span
                                 key={index}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.1 * index }}
                                 className={cn(
-                                  "flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full",
+                                  "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-all duration-300",
                                   item.done
-                                    ? "bg-green-500/10 text-green-500"
-                                    : "bg-muted/50 text-muted-foreground"
+                                    ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                                    : "bg-muted/50 text-muted-foreground border border-muted-foreground/10"
                                 )}
                               >
                                 {item.done ? (
@@ -614,7 +943,7 @@ export default function EditProfilePage() {
                                   <X className="w-3 h-3" />
                                 )}
                                 {item.label}
-                              </span>
+                              </motion.span>
                             ))}
                           </div>
                         </div>
@@ -627,7 +956,7 @@ export default function EditProfilePage() {
                         type="button"
                         variant="outline"
                         onClick={() => router.back()}
-                        className="flex-1 h-12 rounded-xl border-muted-foreground/20 hover:bg-muted/50"
+                        className="flex-1 h-12 rounded-xl border-muted-foreground/20 hover:bg-muted/50 transition-all duration-300 hover:shadow-lg"
                         disabled={isSubmitting}
                       >
                         Cancel
@@ -638,8 +967,9 @@ export default function EditProfilePage() {
                         className={cn(
                           "flex-1 h-12 rounded-xl",
                           "bg-gradient-to-r from-primary via-purple-500 to-pink-500",
-                          "hover:opacity-90 transition-opacity",
-                          "shadow-lg shadow-primary/25"
+                          "hover:opacity-90 transition-all duration-300",
+                          "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
+                          "disabled:opacity-50 disabled:cursor-not-allowed"
                         )}
                       >
                         <AnimatePresence mode="wait">
@@ -678,22 +1008,22 @@ export default function EditProfilePage() {
           {/* Quick Links */}
           <motion.div
             variants={itemVariants}
-            className="flex flex-wrap justify-center gap-4 text-sm"
+            className="flex flex-wrap justify-center gap-4 text-sm pb-8"
           >
             <Link
               href="/settings"
-              className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+              className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 group"
             >
               Account Settings
-              <ArrowLeft className="w-3 h-3 rotate-180" />
+              <ArrowLeft className="w-3 h-3 rotate-180 group-hover:translate-x-1 transition-transform" />
             </Link>
             <span className="text-muted-foreground/30">|</span>
             <Link
               href="/settings/privacy"
-              className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+              className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 group"
             >
               Privacy Settings
-              <ArrowLeft className="w-3 h-3 rotate-180" />
+              <ArrowLeft className="w-3 h-3 rotate-180 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>
         </motion.div>
