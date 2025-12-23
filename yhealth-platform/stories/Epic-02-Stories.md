@@ -503,7 +503,7 @@ Then the AI waits appropriately before responding.
 ### Dependencies
 - Prerequisite Stories: S02.1.1 (call initiation)
 - Related Stories: S02.2.2 (context), S02.3.1 (emotion), S02.6.1 (voice selection)
-- External Dependencies: Azure Speech-to-Text, Azure OpenAI, Text-to-Speech service
+- External Dependencies: AWS Transcribe (Speech-to-Text), Claude/DeepSeek (AI), AWS Polly (Text-to-Speech)
 
 ### Edge Cases & Errors
 | Scenario | Expected Behavior |
@@ -515,7 +515,7 @@ Then the AI waits appropriately before responding.
 | Voice processing API unavailable | "Having trouble with voice. Switch to text chat?" |
 
 ### Open Questions
-- Specific Azure Speech Services configuration
+- Specific AWS Transcribe/Polly configuration
 - Fallback TTS provider for redundancy
 
 ### Definition of Done
@@ -850,7 +850,7 @@ Then the feature is immediately disabled: "I've turned off tone analysis. I'll a
 ### Dependencies
 - Prerequisite Stories: S02.2.1 (voice engine provides audio stream)
 - Related Stories: S02.3.2 (adaptation uses emotion), S02.3.3 (integration logs emotion)
-- External Dependencies: Azure Speech Analytics or equivalent emotion API
+- External Dependencies: AWS Comprehend or equivalent emotion API
 
 ### Edge Cases & Errors
 | Scenario | Expected Behavior |
@@ -863,7 +863,7 @@ Then the feature is immediately disabled: "I've turned off tone analysis. I'll a
 
 ### Open Questions
 - Emotion model calibration per user vs global baseline
-- Specific Azure service vs third-party for emotion detection
+- Specific AWS service vs third-party for emotion detection
 
 ### Definition of Done
 - [ ] Acceptance criteria met
@@ -1570,7 +1570,7 @@ Then it notes discussion topics only: "We talked about [topics]. No specific act
 ### Dependencies
 - Prerequisite Stories: S02.2.1 (provides transcript), S02.2.2 (context for insights), S02.3.1 (emotion for emotional summary)
 - Related Stories: S02.5.2 (delivery), S02.4.x (session type determines content)
-- External Dependencies: Azure OpenAI for summarization
+- External Dependencies: Claude/DeepSeek for summarization
 
 ### Edge Cases & Errors
 | Scenario | Expected Behavior |

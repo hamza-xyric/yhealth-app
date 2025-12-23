@@ -5,6 +5,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { logger } from '../services/logger.service.js';
 import type { AuthenticatedRequest } from '../types/index.js';
+import { notificationService } from '../services/notification.service.js';
 import type {
   GoalDiscoveryInput,
   AssessmentModeInput,
@@ -14,6 +15,7 @@ import type {
   GoalCommitmentInput,
   AcceptSuggestedGoalsInput,
   UpdateGoalInput,
+  DeleteGoalsInput,
 } from '../validators/assessment.validator.js';
 
 // Type definitions
@@ -604,6 +606,14 @@ export const createGoal = asyncHandler(async (req: AuthenticatedRequest, res: Re
 
   logger.info('Goal created', { userId, goalId: goal.id, category: data.category });
 
+  // Send notification for goal creation
+  await notificationService.goalCreated(
+    userId,
+    goal.id,
+    data.title,
+    data.isPrimary || existingGoalsCount === 0
+  );
+
   ApiResponse.created(res, {
     goal: mapGoalRow(goal),
     safetyWarnings: safetyResult.warnings,
@@ -683,6 +693,16 @@ export const acceptSuggestedGoals = asyncHandler(
     });
 
     logger.info('Suggested goals accepted', { userId, goalCount: result.length });
+
+    // Send notifications for each goal created
+    for (const goal of result) {
+      await notificationService.goalCreated(
+        userId,
+        goal.id,
+        goal.title,
+        goal.is_primary
+      );
+    }
 
     ApiResponse.created(res, {
       goals: result.map(mapGoalRow),
@@ -825,18 +845,39 @@ export const updateGoal = asyncHandler(async (req: AuthenticatedRequest, res: Re
   if (data.currentValue !== undefined) {
     updates.push(`current_value = $${paramIndex++}`);
     values.push(data.currentValue);
+
+    // Calculate and update progress percentage
+    const targetValue = data.targetValue || goal.target_value;
+    const startValue = goal.start_value || 0;
+    const range = targetValue - startValue;
+    const currentProgress = range > 0 ? Math.round(((data.currentValue - startValue) / range) * 100) : 0;
+    const clampedProgress = Math.max(0, Math.min(100, currentProgress));
+    updates.push(`progress = $${paramIndex++}`);
+    values.push(clampedProgress);
   }
 
-  // If target changed, regenerate milestones
+  // If target changed, regenerate milestones and recalculate progress
   if (data.targetValue || data.targetDate) {
+    const newTargetValue = data.targetValue || goal.target_value;
     const milestones = generateMilestones(
       goal.start_value || 0,
-      data.targetValue || goal.target_value,
+      newTargetValue,
       goal.duration_weeks,
       goal.target_unit
     );
     updates.push(`milestones = $${paramIndex++}`);
     values.push(JSON.stringify(milestones));
+
+    // Recalculate progress if target changed (and currentValue wasn't already updated above)
+    if (data.targetValue && data.currentValue === undefined) {
+      const startValue = goal.start_value || 0;
+      const currentValue = goal.current_value || startValue;
+      const range = newTargetValue - startValue;
+      const currentProgress = range > 0 ? Math.round(((currentValue - startValue) / range) * 100) : 0;
+      const clampedProgress = Math.max(0, Math.min(100, currentProgress));
+      updates.push(`progress = $${paramIndex++}`);
+      values.push(clampedProgress);
+    }
   }
 
   updates.push('updated_at = CURRENT_TIMESTAMP');
@@ -845,14 +886,108 @@ export const updateGoal = asyncHandler(async (req: AuthenticatedRequest, res: Re
   const updateQuery = `UPDATE user_goals SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
 
   const updatedResult = await query<UserGoalRow>(updateQuery, values);
+  const updatedGoal = updatedResult.rows[0];
 
   logger.info('Goal updated', { userId, goalId });
 
-  ApiResponse.success(res, { goal: mapGoalRow(updatedResult.rows[0]) }, 'Goal updated successfully');
+  // Send progress notification if currentValue was updated
+  if (data.currentValue !== undefined) {
+    const previousProgress = goal.progress || 0;
+    const newProgress = mapGoalRow(updatedGoal).progress;
+    await notificationService.goalProgressUpdated(
+      userId,
+      goalId,
+      updatedGoal.title,
+      newProgress,
+      previousProgress
+    );
+
+    // Check if goal is completed
+    if (newProgress >= 100 && previousProgress < 100) {
+      await notificationService.goalCompleted(userId, goalId, updatedGoal.title);
+    }
+  }
+
+  ApiResponse.success(res, { goal: mapGoalRow(updatedGoal) }, 'Goal updated successfully');
+});
+
+/**
+ * Delete Single Goal
+ * DELETE /api/assessment/goals/:goalId
+ */
+export const deleteGoal = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user?.userId;
+  if (!userId) throw ApiError.unauthorized();
+
+  const { goalId } = req.params;
+
+  if (!goalId) throw ApiError.badRequest('Goal ID is required');
+
+  const goalResult = await query<UserGoalRow>(
+    'SELECT * FROM user_goals WHERE id = $1 AND user_id = $2',
+    [goalId, userId]
+  );
+
+  if (goalResult.rows.length === 0) throw ApiError.notFound('Goal not found');
+
+  await query('DELETE FROM user_goals WHERE id = $1 AND user_id = $2', [goalId, userId]);
+
+  logger.info('Goal deleted', { userId, goalId });
+
+  ApiResponse.success(res, { deleted: true, goalId }, 'Goal deleted successfully');
+});
+
+/**
+ * Delete Multiple Goals (Bulk Delete)
+ * DELETE /api/assessment/goals
+ */
+export const deleteGoals = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user?.userId;
+  if (!userId) throw ApiError.unauthorized();
+
+  const data = req.body as DeleteGoalsInput;
+
+  if (!data.goalIds || data.goalIds.length === 0) {
+    throw ApiError.badRequest('At least one goal ID is required');
+  }
+
+  // Verify all goals belong to user
+  const goalsResult = await query<{ id: string }>(
+    `SELECT id FROM user_goals WHERE id = ANY($1::uuid[]) AND user_id = $2`,
+    [data.goalIds, userId]
+  );
+
+  if (goalsResult.rows.length === 0) {
+    throw ApiError.notFound('No goals found');
+  }
+
+  const validIds = goalsResult.rows.map(r => r.id);
+
+  // Delete the goals
+  const deleteResult = await query(
+    `DELETE FROM user_goals WHERE id = ANY($1::uuid[]) AND user_id = $2`,
+    [validIds, userId]
+  );
+
+  logger.info('Goals deleted', { userId, count: deleteResult.rowCount, goalIds: validIds });
+
+  ApiResponse.success(res, {
+    deleted: true,
+    count: deleteResult.rowCount,
+    goalIds: validIds
+  }, `${deleteResult.rowCount} goal(s) deleted successfully`);
 });
 
 // Helper function to map goal row to API format
 function mapGoalRow(row: UserGoalRow) {
+  // Calculate progress dynamically to ensure accuracy
+  const startValue = row.start_value || 0;
+  const currentValue = row.current_value ?? startValue;
+  const targetValue = row.target_value;
+  const range = targetValue - startValue;
+  const calculatedProgress = range > 0 ? Math.round(((currentValue - startValue) / range) * 100) : 0;
+  const progress = Math.max(0, Math.min(100, calculatedProgress));
+
   return {
     id: row.id,
     userId: row.user_id,
@@ -873,7 +1008,7 @@ function mapGoalRow(row: UserGoalRow) {
     motivation: row.motivation,
     confidenceLevel: row.confidence_level,
     status: row.status,
-    progress: row.progress,
+    progress: progress,
     isSafetyChecked: row.is_safety_checked,
     safetyWarnings: row.safety_warnings,
     requiresDoctorConsult: row.requires_doctor_consult,
@@ -1115,4 +1250,6 @@ export default {
   commitToGoal,
   getGoals,
   updateGoal,
+  deleteGoal,
+  deleteGoals,
 };

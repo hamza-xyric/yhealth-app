@@ -1,6 +1,7 @@
 import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 import { env } from './env.config.js';
 import { logger } from '../services/logger.service.js';
+import { autoMigrate } from '../database/auto-migrate.js';
 
 interface ConnectionOptions {
   maxRetries?: number;
@@ -110,6 +111,26 @@ class DatabaseConnection {
       logger.info('PostgreSQL connected successfully', {
         timestamp: result.rows[0].now,
       });
+
+      // Auto-migrate missing tables
+      try {
+        const migrationResult = await autoMigrate();
+        if (migrationResult.success) {
+          if (migrationResult.tablesCreated.length > 0) {
+            logger.info('Auto-migration completed', {
+              tablesCreated: migrationResult.tablesCreated,
+              totalTables: migrationResult.existingTables.length,
+            });
+          }
+        } else {
+          logger.warn('Auto-migration completed with issues');
+        }
+      } catch (migrationError) {
+        logger.error('Auto-migration failed', {
+          error: migrationError instanceof Error ? migrationError.message : 'Unknown error'
+        });
+        // Don't throw - allow server to continue even if migration fails
+      }
 
       return this.pool;
     } catch (error) {

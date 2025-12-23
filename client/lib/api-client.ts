@@ -265,9 +265,10 @@ class ApiClient {
 
   async delete<T>(
     endpoint: string,
+    body?: unknown,
     config?: RequestConfig
   ): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { ...config, method: "DELETE" });
+    return this.request<T>(endpoint, { ...config, method: "DELETE", data: body });
   }
 
   // Upload method for multipart form data (don't set Content-Type - let browser set it with boundary)

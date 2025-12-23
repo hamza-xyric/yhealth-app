@@ -1,6 +1,6 @@
 # yHealth Color System
 
-> A comprehensive color palette designed for dark mode primary experience with warm, approachable aesthetics.
+> A playful, expressive color palette designed for a dark mode primary experience with warmth, personality, and celebration.
 
 ---
 
@@ -9,10 +9,11 @@
 ### Design Principles
 
 1. **Dark Mode Primary**: Premium, immersive, modern. Easier on eyes, battery-efficient.
-2. **Warm Teal/Cyan**: Balance of calm (blue) + vitality (green). Unique positioning.
-3. **Three Distinct Pillar Colors**: Clear visual language for Fitness, Nutrition, Wellbeing.
-4. **Warmer Than Clinical**: Human and supportive, not sterile or medical.
-5. **Accessibility First**: WCAG 2.1 AA compliance (4.5:1 contrast minimum).
+2. **Playful & Expressive**: Colors should feel alive, with gradients and glow effects that add personality.
+3. **Three Living Pillars**: Each pillar has a creature with its own color story and emotional arc.
+4. **Celebration-Ready**: Rich, vibrant celebration colors for achievements and milestones.
+5. **Time-Aware**: Color temperature shifts based on time of day (warmer mornings, cooler evenings).
+6. **Accessibility First**: WCAG 2.1 AA compliance (4.5:1 contrast minimum).
 
 ### Color Psychology
 
@@ -141,6 +142,126 @@ Each pillar has a distinct color identity while harmonizing with the primary tea
 | `wellbeing-900` | `#0D47A1` | 13, 71, 161 | Dark mode deep |
 
 **Use for**: Mood tracking, journaling, sleep, habits, energy levels
+
+---
+
+## Creature Color System
+
+Each pillar creature has a rich gradient palette that reflects their emotional state and vitality.
+
+### Ember (Fitness Creature) Colors
+
+| State | Gradient | Glow | Description |
+|-------|----------|------|-------------|
+| **Blazing** (80-100) | `#FF6B00` → `#FF9800` → `#FFC107` | `#FF9800/40` | Vibrant, dancing warmth |
+| **Steady** (60-79) | `#F57C00` → `#FF9800` → `#FFB74D` | `#FF9800/25` | Warm, comfortable glow |
+| **Dimming** (40-59) | `#EF6C00` → `#F57C00` → `#FF9800` | `#FF9800/15` | Muted, cooler warmth |
+| **Ember** (0-39) | `#E65100` → `#EF6C00` → `#F57C00` | `#FF9800/08` | Soft, needs kindling |
+
+```css
+/* Ember gradients */
+.ember-blazing { background: linear-gradient(135deg, #FF6B00 0%, #FF9800 50%, #FFC107 100%); }
+.ember-steady { background: linear-gradient(135deg, #F57C00 0%, #FF9800 50%, #FFB74D 100%); }
+.ember-dimming { background: linear-gradient(135deg, #EF6C00 0%, #F57C00 50%, #FF9800 100%); }
+.ember-low { background: linear-gradient(135deg, #E65100 0%, #EF6C00 50%, #F57C00 100%); }
+```
+
+### Sprout (Nutrition Creature) Colors
+
+| State | Gradient | Glow | Description |
+|-------|----------|------|-------------|
+| **Flourishing** (80-100) | `#2E7D32` → `#4CAF50` → `#81C784` | `#4CAF50/40` | Lush, full bloom |
+| **Growing** (60-79) | `#388E3C` → `#4CAF50` → `#66BB6A` | `#4CAF50/25` | Healthy, vibrant |
+| **Wilting** (40-59) | `#43A047` → `#388E3C` → `#4CAF50` | `#4CAF50/15` | Needs nourishment |
+| **Seedling** (0-39) | `#1B5E20` → `#2E7D32` → `#388E3C` | `#4CAF50/08` | Dormant, waiting |
+
+```css
+/* Sprout gradients */
+.sprout-flourishing { background: linear-gradient(135deg, #2E7D32 0%, #4CAF50 50%, #81C784 100%); }
+.sprout-growing { background: linear-gradient(135deg, #388E3C 0%, #4CAF50 50%, #66BB6A 100%); }
+.sprout-wilting { background: linear-gradient(135deg, #43A047 0%, #388E3C 50%, #4CAF50 100%); }
+.sprout-seedling { background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #388E3C 100%); }
+```
+
+### Nimbus (Wellbeing Creature) Colors
+
+| State | Gradient | Glow | Description |
+|-------|----------|------|-------------|
+| **Serene** (80-100) | `#64B5F6` → `#5C9CE6` → `#B39DDB` | `#5C9CE6/40` | Peaceful, rainbow hint |
+| **Balanced** (60-79) | `#42A5F5` → `#5C9CE6` → `#90CAF9` | `#5C9CE6/25` | Calm, stable |
+| **Cloudy** (40-59) | `#1E88E5` → `#42A5F5` → `#5C9CE6` | `#5C9CE6/15` | Gray edges appearing |
+| **Stormy** (0-39) | `#1565C0` → `#1976D2` → `#1E88E5` | `#5C9CE6/08` | Darker, needs clearing |
+
+```css
+/* Nimbus gradients */
+.nimbus-serene { background: linear-gradient(135deg, #64B5F6 0%, #5C9CE6 50%, #B39DDB 100%); }
+.nimbus-balanced { background: linear-gradient(135deg, #42A5F5 0%, #5C9CE6 50%, #90CAF9 100%); }
+.nimbus-cloudy { background: linear-gradient(135deg, #1E88E5 0%, #42A5F5 50%, #5C9CE6 100%); }
+.nimbus-stormy { background: linear-gradient(135deg, #1565C0 0%, #1976D2 50%, #1E88E5 100%); }
+```
+
+---
+
+## Celebration Colors
+
+### Confetti Palette
+
+Used for achievement celebrations, streaks, and milestone animations.
+
+| Color | Hex | Usage |
+|-------|-----|-------|
+| `confetti-gold` | `#FFD700` | Primary celebration, gold medals |
+| `confetti-coral` | `#FF6B6B` | Warm celebrations |
+| `confetti-teal` | `#4ECDC4` | Cool celebrations |
+| `confetti-purple` | `#A855F7` | Special achievements |
+| `confetti-pink` | `#F472B6` | Streak celebrations |
+| `confetti-lime` | `#84CC16` | Health milestones |
+
+### Achievement Glow Colors
+
+| Achievement Type | Glow Color | Intensity |
+|------------------|------------|-----------|
+| **Daily Goal** | `#FFD700/30` | Subtle |
+| **Weekly Streak** | `#F472B6/40` | Medium |
+| **Personal Best** | `#A855F7/50` | Strong |
+| **Trio Perfect** (all 3 pillars 80+) | Rainbow gradient | Maximum |
+
+```css
+/* Celebration effects */
+.celebration-glow { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+.streak-glow { box-shadow: 0 0 30px rgba(244, 114, 182, 0.4); }
+.rainbow-glow {
+  box-shadow:
+    0 0 10px rgba(255, 107, 107, 0.3),
+    0 0 20px rgba(78, 205, 196, 0.3),
+    0 0 30px rgba(168, 85, 247, 0.3);
+}
+```
+
+---
+
+## Time-Aware Color Shifts
+
+The app subtly shifts color temperature based on time of day.
+
+### Time-Based Gradients
+
+| Time | Background Tint | Primary Shift | Mood |
+|------|-----------------|---------------|------|
+| **Morning** (5am-11am) | Warm amber tint | Warmer teal | Energizing, fresh |
+| **Afternoon** (11am-5pm) | Neutral | Default | Balanced, focused |
+| **Evening** (5pm-9pm) | Warm sunset tint | Softer teal | Winding down |
+| **Night** (9pm-5am) | Cool blue-purple | Cooler teal | Calm, restful |
+
+```css
+/* Time-based background overlays */
+.time-morning { background: linear-gradient(to bottom, rgba(255, 183, 77, 0.05), transparent); }
+.time-afternoon { background: transparent; }
+.time-evening { background: linear-gradient(to bottom, rgba(255, 138, 101, 0.05), transparent); }
+.time-night { background: linear-gradient(to bottom, rgba(103, 58, 183, 0.05), transparent); }
+```
+
+---
 
 ### Tailwind Configuration - Pillars
 ```js
@@ -569,4 +690,4 @@ module.exports = {
 
 ---
 
-*yHealth Color System v1.0 | Dark mode primary, WCAG 2.1 AA compliant*
+*yHealth Color System v2.0 | Playful, Expressive, Celebration-Ready*

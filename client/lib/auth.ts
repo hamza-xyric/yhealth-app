@@ -163,14 +163,13 @@ export const authConfig: NextAuthConfig = {
         if (account?.provider === "google") {
           const backendData = (user as unknown as Record<string, unknown>).backendData as {
             user: { id: string; onboardingStatus: string };
-            accessToken: string;
-            refreshToken: string;
+            tokens: { accessToken: string; refreshToken: string };
           } | undefined;
 
           if (backendData) {
             token.id = backendData.user.id;
-            token.accessToken = backendData.accessToken;
-            token.refreshToken = backendData.refreshToken;
+            token.accessToken = backendData.tokens.accessToken;
+            token.refreshToken = backendData.tokens.refreshToken;
             token.onboardingStatus = backendData.user.onboardingStatus;
 
             if (process.env.NODE_ENV === "development") {

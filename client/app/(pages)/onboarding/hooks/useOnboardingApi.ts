@@ -225,7 +225,8 @@ export function useOnboardingApi() {
           durationWeeks: g.timeline.durationWeeks,
         },
         motivation: g.motivation,
-        confidenceLevel: g.confidenceLevel,
+        // Ensure confidenceLevel is always set (default to 7 if not provided)
+        confidenceLevel: g.confidenceLevel ?? 7,
       }));
 
       const response = await api.post<{
@@ -428,14 +429,14 @@ export function useOnboardingApi() {
   }, []);
 
   // Generate Plan
-  const generatePlan = useCallback(async (goalId?: string) => {
+  const generatePlan = useCallback(async (goalId?: string, regenerate: boolean = true) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await api.post<{ plan: PlanData; message: string }>(
         "/plans/generate",
-        { goalId }
+        { goalId, regenerate }
       );
 
       if (response.success && response.data) {

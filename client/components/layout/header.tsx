@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Rocket,
   Target,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +28,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Logo } from "@/components/common/logo";
-import { ThemeToggle } from "@/components/common/theme-toggle";
 import { useAuth } from "@/app/context/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -96,7 +96,7 @@ export function Header() {
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         isScrolled
           ? "glass border-b border-white/10 shadow-lg shadow-primary/5"
-          : "bg-white"
+          : "bg-white dark:bg-background"
       )}
     >
       {/* Gradient line at top when scrolled */}
@@ -137,13 +137,24 @@ export function Header() {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-3">
-            <ThemeToggle />
-
             <div className="hidden md:flex items-center gap-3">
               {isLoading ? (
                 <div className="w-24 h-10 glass rounded-full animate-pulse" />
               ) : isAuthenticated && user ? (
-                <DropdownMenu>
+                <>
+                  {/* Notification Bell */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    asChild
+                    className="relative rounded-full hover:bg-primary/10 transition-colors"
+                  >
+                    <Link href="/notifications">
+                      <Bell className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
+                    </Link>
+                  </Button>
+
+                  <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
@@ -253,7 +264,7 @@ export function Header() {
                         className="cursor-pointer rounded-xl px-3 py-2.5 focus:bg-purple-500/10 hover:bg-purple-500/10 transition-colors group"
                       >
                         <Link
-                          href={`/profile/${user?.id}`}
+                          href={`/profile`}
                           className="flex items-center gap-3"
                         >
                           <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition-colors">
@@ -331,6 +342,7 @@ export function Header() {
                     </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </>
               ) : (
                 <>
                   <Button
@@ -466,7 +478,7 @@ export function Header() {
                         My Goals
                       </Link>
                       <Link
-                        href={`/profile/${user?.id}`}
+                        href={`/profile`}
                         className="flex items-center gap-3 py-3 px-4 text-muted-foreground hover:text-foreground hover:bg-primary/10 rounded-xl transition-all"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >

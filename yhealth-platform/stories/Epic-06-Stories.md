@@ -399,7 +399,7 @@ Then calorie estimates are within ±10-15% of actual values for 85%+ of photos.
 ### Dependencies
 - **Prerequisite Stories:** S06.0.1 (Food Database Infrastructure)
 - **Related Stories:** S06.1.2, S06.1.3, S06.2.1
-- **External Dependencies:** Photo AI service (Azure/Google Cloud Vision or custom model)
+- **External Dependencies:** Photo AI service (Claude Vision or custom model)
 
 ### Edge Cases & Errors
 | Scenario | Expected Behavior |

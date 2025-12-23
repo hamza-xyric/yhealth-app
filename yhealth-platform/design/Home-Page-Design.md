@@ -1,20 +1,20 @@
 # yHealth Home Page Design
 
-> The primary dashboard experience for yHealth - delivering at-a-glance wellness insights with equal focus on Fitness, Nutrition, and Wellbeing.
+> A conversation-first home experience featuring pillar creatures, AI questions, and a flowing chat stream.
 
 ---
 
 ## Overview
 
-The Home Page is the heart of the yHealth experience. It provides users with an immediate understanding of their daily wellness status, personalized AI coaching insights, and quick access to logging actions.
+The Home Page is the heart of the yHealth experience. It combines the warmth of a personal health companion with at-a-glance wellness insights through animated pillar creatures.
 
 ### Design Goals
 
-1. **Glanceable**: Users should understand their wellness status in under 3 seconds
-2. **Equal Pillars**: Fitness, Nutrition, and Wellbeing receive equal visual weight
-3. **Action-Oriented**: Clear pathways to log, check-in, and improve
-4. **Warm & Supportive**: Encouraging tone, not clinical or judgmental
-5. **Bevel-Inspired**: Clean dashboard aesthetic with progress rings and subtle animations
+1. **Conversation-First**: The chat stream is the primary interface, not a feature
+2. **Character-Driven**: Sage and pillar creatures create emotional connection
+3. **Quick Engagement**: MCQ chips enable one-tap responses
+4. **Voice-Equal**: Speaking is as natural as typing
+5. **Playful & Alive**: Characters breathe, react, and celebrate
 
 ### Target User State
 
@@ -33,59 +33,43 @@ The Home Page is the heart of the yHealth experience. It provides users with an 
 │  ▀▀▀▀▀▀▀▀▀ Status Bar ▀▀▀▀▀▀▀▀▀        │
 ├─────────────────────────────────────────┤
 │                                         │
-│  Good morning, Alex              [👤]   │  ← Header
-│  Tuesday, December 7                    │
+│  Hey Alex! How are you?          [👤]   │  ← Warm greeting
 │                                         │
 ├─────────────────────────────────────────┤
 │                                         │
-│              ╭──────╮                   │
-│             │   78  │                   │  ← Overall Score
-│             │ Today │                   │
-│              ╰──────╯                   │
+│   🔥        🌿        ☁️                │  ← Pillar Creatures
+│   78        65        82                │     (compact row)
+│  Ember    Sprout    Nimbus              │
+│                                         │
+├─────────────────────────────────────────┤
+│  ┌─────────────────────────────────┐   │
+│  │ 🤖 I noticed you slept better   │   │  ← AI Question Card
+│  │    last week. What changed?     │   │
+│  │                                 │   │
+│  │ [🛏️ Earlier] [📵 Less screen]  │   │  ← MCQ chips
+│  │ [🧘 Relaxed] [📝 Tell me...]    │   │
+│  └─────────────────────────────────┘   │
 │                                         │
 ├─────────────────────────────────────────┤
 │                                         │
-│  ┌───────────┐    ┌───────────┐        │
-│  │  FITNESS  │    │ NUTRITION │        │  ← Pillar Cards
-│  │           │    │           │        │     (2-column)
-│  │    85     │    │    72     │        │
-│  │   ○───○   │    │   ○───○   │        │
-│  │  +12%     │    │  -5%      │        │
-│  └───────────┘    └───────────┘        │
-│                                         │
-│  ┌───────────────────────────────┐     │
-│  │         WELLBEING             │     │  ← Wellbeing Card
-│  │            78                 │     │     (full width)
-│  │           ○───○               │     │
-│  │          Stable               │     │
-│  └───────────────────────────────┘     │
-│                                         │
-├─────────────────────────────────────────┤
-│                                         │
-│  💡 Coach Insight                       │  ← AI Insight
+│  Today                                  │  ← Conversation stream
 │  ─────────────────────────────────      │
-│  Your workouts are 40% more             │
-│  effective after 7+ hours of sleep.     │
-│  Last night: 6h 45m.                    │
-│                                         │
-│  [Learn More]                           │
-│                                         │
-├─────────────────────────────────────────┤
-│                                         │
-│  Quick Actions                          │
-│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐  │  ← Action Pills
-│  │Check │ │ Log  │ │ Log  │ │ Log  │  │
-│  │ In   │ │Meal  │ │Workout│ │Mood  │  │
-│  └──────┘ └──────┘ └──────┘ └──────┘  │
+│       ┌─────────────────────────┐      │
+│       │ Feeling tired but went  │      │  ← User message
+│       │ for a short walk anyway │      │
+│       └─────────────────────────┘      │
+│  ┌────────────────────────────┐        │
+│  │ 🤖 That's great! Even short│        │  ← AI message
+│  │ walks count. Energy now?   │        │
+│  └────────────────────────────┘        │
+│       ┌─────────────────────────┐      │
+│       │ 🎤 Voice note (0:23)    │      │  ← Voice note
+│       └─────────────────────────┘      │
 │                                         │
 ├─────────────────────────────────────────┤
-│                                         │
-│  Today's Activity                       │  ← Activity Feed
-│  ─────────────────────────────────      │
-│  🏃 Morning Run · 5.2km · 8:30am        │
-│  🥗 Lunch logged · 650 cal · 12:45pm    │
-│  😊 Mood: Good · 2:00pm                 │
-│                                         │
+│  ┌────────────────────────────────┐    │
+│  │ 💬 Type or speak...   🎤  📎  │    │  ← Input bar
+│  └────────────────────────────────┘    │
 ├─────────────────────────────────────────┤
 │                                         │
 │  [🏠]    [📊]    [💬]    [⚙️]          │  ← Tab Bar
@@ -100,14 +84,14 @@ The Home Page is the heart of the yHealth experience. It provides users with an 
 
 ### 1. Header Section
 
-The header establishes context and personalization.
+A warm, friendly greeting that sets the conversational tone.
 
 #### Layout
+
 ```
 ┌─────────────────────────────────────────┐
 │                                         │
-│  Good morning, Alex              [👤]   │
-│  Tuesday, December 7                    │
+│  Hey Alex! How are you?          [👤]   │
 │                                         │
 └─────────────────────────────────────────┘
 ```
@@ -116,290 +100,48 @@ The header establishes context and personalization.
 
 | Element | Spec | Tailwind |
 |---------|------|----------|
-| Container height | 80px | `h-20` |
+| Container height | 64px | `h-16` |
 | Horizontal padding | 16px | `px-4` |
 | Top padding | 16px (after safe area) | `pt-4` |
-| Greeting | 28px, Bold | `text-2xl font-bold` |
-| Date | 14px, Muted | `text-sm text-muted-foreground` |
+| Greeting | 24px, Semibold | `text-2xl font-semibold` |
 | Avatar | 40px circle | `h-10 w-10 rounded-full` |
 
-#### Greeting Logic
+#### Greeting Variations
 
 | Time Range | Greeting |
 |------------|----------|
-| 5:00 - 11:59 | Good morning |
-| 12:00 - 16:59 | Good afternoon |
-| 17:00 - 20:59 | Good evening |
-| 21:00 - 4:59 | Good night |
+| 5:00 - 11:59 | Good morning, Alex! |
+| 12:00 - 16:59 | Hey Alex! How's your day? |
+| 17:00 - 20:59 | Good evening, Alex! |
+| 21:00 - 4:59 | Hey Alex, winding down? |
 
 #### Implementation
 
 ```tsx
-<header className="h-20 px-4 pt-4 flex items-start justify-between">
-  <div>
-    <h1 className="text-2xl font-bold text-foreground">
-      Good morning, Alex
-    </h1>
-    <p className="text-sm text-muted-foreground mt-1">
-      Tuesday, December 7
-    </p>
-  </div>
+<header className="h-16 px-4 pt-4 flex items-center justify-between">
+  <h1 className="text-2xl font-semibold text-foreground">
+    Hey Alex! How are you?
+  </h1>
   <button className="h-10 w-10 rounded-full bg-card overflow-hidden">
-    <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+    <img src={avatarUrl} alt="Profile" />
   </button>
 </header>
 ```
 
 ---
 
-### 2. Overall Wellness Score
+### 2. Pillar Creatures Section
 
-A hero element showing the combined daily wellness score.
-
-#### Layout
-```
-              ╭──────────╮
-             │           │
-             │    78     │
-             │   Today   │
-             │           │
-              ╰──────────╯
-```
-
-#### Specifications
-
-| Element | Spec | Tailwind |
-|---------|------|----------|
-| Container padding | 24px top, 16px bottom | `pt-6 pb-4` |
-| Ring size | 120x120px | `h-30 w-30` |
-| Ring stroke | 8px | custom SVG |
-| Ring track | `#2C2C2C` (muted) | — |
-| Ring progress | `#00BCD4` (primary) | — |
-| Score text | 48px, Bold | `text-5xl font-bold` |
-| Label text | 14px, Muted | `text-sm text-muted-foreground` |
-
-#### Score Calculation
-
-```
-Overall Score = (Fitness × 0.33) + (Nutrition × 0.33) + (Wellbeing × 0.34)
-```
-
-#### Implementation
-
-```tsx
-<section className="pt-6 pb-4 flex justify-center">
-  <div className="relative h-30 w-30">
-    {/* Background ring */}
-    <svg className="absolute inset-0" viewBox="0 0 120 120">
-      <circle
-        cx="60" cy="60" r="54"
-        fill="none"
-        stroke="hsl(var(--muted))"
-        strokeWidth="8"
-      />
-      <circle
-        cx="60" cy="60" r="54"
-        fill="none"
-        stroke="hsl(var(--primary))"
-        strokeWidth="8"
-        strokeDasharray="339.3"
-        strokeDashoffset={339.3 * (1 - score / 100)}
-        strokeLinecap="round"
-        transform="rotate(-90 60 60)"
-        className="transition-all duration-500 ease-out"
-      />
-    </svg>
-    {/* Center content */}
-    <div className="absolute inset-0 flex flex-col items-center justify-center">
-      <span className="text-5xl font-bold tabular-nums text-foreground">
-        {score}
-      </span>
-      <span className="text-sm text-muted-foreground">Today</span>
-    </div>
-  </div>
-</section>
-```
-
----
-
-### 3. Three Pillar Cards
-
-Equal-weight cards for Fitness, Nutrition, and Wellbeing.
-
-#### Layout Pattern
-
-```
-┌───────────────┐    ┌───────────────┐
-│    FITNESS    │    │   NUTRITION   │
-│               │    │               │
-│      85       │    │      72       │
-│     ○───○     │    │     ○───○     │
-│    ▲ +12%     │    │    ▼ -5%      │
-└───────────────┘    └───────────────┘
-
-┌───────────────────────────────────────┐
-│              WELLBEING                │
-│                 78                    │
-│               ○───○                   │
-│              → Stable                 │
-└───────────────────────────────────────┘
-```
-
-#### Grid Specifications
-
-| Element | Spec | Tailwind |
-|---------|------|----------|
-| Container padding | 16px horizontal | `px-4` |
-| Grid gap | 16px | `gap-4` |
-| Grid columns | 2 for Fitness/Nutrition | `grid-cols-2` |
-| Wellbeing span | Full width | `col-span-2` |
-
-#### Pillar Card Component
-
-##### Props
-
-```tsx
-interface PillarCardProps {
-  pillar: 'fitness' | 'nutrition' | 'wellbeing';
-  score: number;
-  trend: {
-    direction: 'up' | 'down' | 'stable';
-    value: string;
-  };
-  onPress: () => void;
-}
-```
-
-##### Visual Specifications
-
-| Element | Spec | Tailwind |
-|---------|------|----------|
-| Background | `#1E1E1E` | `bg-card` |
-| Border radius | 12px | `rounded-lg` |
-| Padding | 20px | `p-5` |
-| Min height | 140px | `min-h-[140px]` |
-| Pillar label | 11px, Bold, Uppercase | `text-xs font-bold uppercase tracking-widest` |
-| Score | 40px, Bold | `text-4xl font-bold tabular-nums` |
-| Trend | 12px | `text-xs` |
-| Progress ring | 48px diameter | `h-12 w-12` |
-
-##### Pillar Colors
-
-| Pillar | Label Color | Ring Color | Trend Up | Trend Down |
-|--------|-------------|------------|----------|------------|
-| Fitness | `#FFB74D` | `#FF9800` | `#81C784` | `#E57373` |
-| Nutrition | `#81C784` | `#4CAF50` | `#81C784` | `#E57373` |
-| Wellbeing | `#64B5F6` | `#5C9CE6` | `#81C784` | `#E57373` |
-
-##### Implementation
-
-```tsx
-const pillarColors = {
-  fitness: {
-    label: 'text-fitness-300',
-    ring: 'stroke-fitness-500',
-  },
-  nutrition: {
-    label: 'text-nutrition-300',
-    ring: 'stroke-nutrition-500',
-  },
-  wellbeing: {
-    label: 'text-wellbeing-300',
-    ring: 'stroke-wellbeing-500',
-  },
-};
-
-<button
-  onClick={onPress}
-  className={cn(
-    "bg-card rounded-lg p-5 min-h-[140px]",
-    "flex flex-col justify-between",
-    "transition-transform duration-150 ease-out active:scale-[0.98]",
-    pillar === 'wellbeing' && "col-span-2"
-  )}
->
-  {/* Pillar label */}
-  <span className={cn(
-    "text-xs font-bold uppercase tracking-widest",
-    pillarColors[pillar].label
-  )}>
-    {pillar}
-  </span>
-
-  {/* Score and ring */}
-  <div className="flex items-center justify-between mt-3">
-    <div>
-      <span className="text-4xl font-bold tabular-nums text-foreground">
-        {score}
-      </span>
-      <div className={cn(
-        "text-xs mt-1 flex items-center gap-1",
-        trend.direction === 'up' && "text-success",
-        trend.direction === 'down' && "text-destructive",
-        trend.direction === 'stable' && "text-muted-foreground"
-      )}>
-        {trend.direction === 'up' && <ArrowUp className="h-3 w-3" />}
-        {trend.direction === 'down' && <ArrowDown className="h-3 w-3" />}
-        {trend.direction === 'stable' && <Minus className="h-3 w-3" />}
-        {trend.value}
-      </div>
-    </div>
-
-    {/* Progress ring */}
-    <ProgressRing
-      value={score}
-      size="sm"
-      className={pillarColors[pillar].ring}
-    />
-  </div>
-</button>
-```
-
-##### Full Grid Implementation
-
-```tsx
-<section className="px-4">
-  <div className="grid grid-cols-2 gap-4">
-    <PillarCard
-      pillar="fitness"
-      score={85}
-      trend={{ direction: 'up', value: '+12% from yesterday' }}
-      onPress={() => navigate('/fitness')}
-    />
-    <PillarCard
-      pillar="nutrition"
-      score={72}
-      trend={{ direction: 'down', value: '-5% from yesterday' }}
-      onPress={() => navigate('/nutrition')}
-    />
-    <PillarCard
-      pillar="wellbeing"
-      score={78}
-      trend={{ direction: 'stable', value: 'Stable' }}
-      onPress={() => navigate('/wellbeing')}
-    />
-  </div>
-</section>
-```
-
----
-
-### 4. AI Coach Insight Card
-
-Personalized insight from the AI coach.
+Three animated creatures representing Fitness, Nutrition, and Wellbeing.
 
 #### Layout
 
 ```
 ┌─────────────────────────────────────────┐
 │                                         │
-│  💡 Coach Insight                       │
-│                                         │
-│  Your workouts are 40% more             │
-│  effective after 7+ hours of sleep.     │
-│  Last night you got 6h 45m.             │
-│                                         │
-│  [Learn More]                           │
+│   🔥        🌿        ☁️                │
+│   78        65        82                │
+│  Ember    Sprout    Nimbus              │
 │                                         │
 └─────────────────────────────────────────┘
 ```
@@ -408,136 +150,120 @@ Personalized insight from the AI coach.
 
 | Element | Spec | Tailwind |
 |---------|------|----------|
-| Container margin | 24px top | `mt-6` |
-| Horizontal padding | 16px | `px-4` |
-| Card background | `#1E1E1E` | `bg-card` |
-| Border radius | 12px | `rounded-lg` |
-| Card padding | 20px | `p-5` |
-| Icon | 20px, Primary teal | `h-5 w-5 text-primary` |
-| Title | 16px, Semibold | `text-base font-semibold` |
-| Message | 14px, Secondary | `text-sm text-muted-foreground` |
-| CTA | Ghost button | `variant="ghost"` |
+| Container padding | 16px horizontal, 20px vertical | `px-4 py-5` |
+| Creature container | Flex with equal spacing | `flex justify-around` |
+| Creature size | 64px base (scales with score) | `w-16 h-16` |
+| Score text | 24px, Bold | `text-2xl font-bold` |
+| Label text | 12px, Muted | `text-xs text-muted-foreground` |
 
-#### Left Accent Variant (Optional)
+#### Creature States
 
-```css
-/* Teal left border accent */
-.insight-card {
-  border-left: 3px solid hsl(var(--primary));
-}
-```
+Each creature scales and animates based on score:
+
+| Score Range | Scale | Glow | Animation |
+|-------------|-------|------|-----------|
+| 80-100 | 110% | Strong | Celebratory |
+| 60-79 | 100% | Medium | Active |
+| 40-59 | 80% | Subtle | Slow |
+| 0-39 | 60% | Minimal | Idle |
 
 #### Implementation
 
 ```tsx
-<section className="mt-6 px-4">
-  <div className="bg-card rounded-lg p-5 border-l-3 border-primary">
-    {/* Header */}
-    <div className="flex items-center gap-2 mb-3">
-      <Lightbulb className="h-5 w-5 text-primary" />
-      <span className="text-base font-semibold text-foreground">
-        Coach Insight
-      </span>
-    </div>
-
-    {/* Message */}
-    <p className="text-sm text-muted-foreground leading-relaxed">
-      Your workouts are 40% more effective after 7+ hours of sleep.
-      Last night you got 6h 45m.
-    </p>
-
-    {/* CTA */}
-    <button className="mt-4 text-sm font-medium text-primary hover:text-primary-400 transition-colors">
-      Learn More
-    </button>
+<section className="px-4 py-5">
+  <div className="flex justify-around">
+    {pillars.map((pillar) => (
+      <button
+        key={pillar.id}
+        onClick={() => navigate(`/${pillar.id}`)}
+        className="flex flex-col items-center"
+      >
+        <PillarCreature
+          pillar={pillar.id}
+          score={pillar.score}
+          size="md"
+          showScore
+        />
+        <span className="text-xs text-muted-foreground mt-1">
+          {pillar.name}
+        </span>
+      </button>
+    ))}
   </div>
 </section>
 ```
 
 ---
 
-### 5. Quick Actions Section
+### 3. AI Question Card
 
-Horizontal scrollable action pills for common tasks.
+A prominent card where Sage asks the user a question with quick-response options.
 
 #### Layout
 
 ```
-Quick Actions
-┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
-│ 📝   │ │ 🍽️   │ │ 🏃   │ │ 😊   │
-│Check │ │ Log  │ │ Log  │ │ Log  │
-│ In   │ │ Meal │ │Workout│ │ Mood │
-└──────┘ └──────┘ └──────┘ └──────┘
+┌──────────────────────────────────────────┐
+│  ┌────┐                                  │
+│  │ 🤖 │  I noticed you slept better      │
+│  │Sage│  last week. What changed?        │
+│  └────┘                                  │
+│                                          │
+│  [🛏️ Earlier bedtime] [📵 Less screen]  │
+│  [🧘 Relaxation]  [📝 Tell me more...]   │
+└──────────────────────────────────────────┘
 ```
 
 #### Specifications
 
 | Element | Spec | Tailwind |
 |---------|------|----------|
-| Section margin | 24px top | `mt-6` |
-| Section title | 16px, Semibold | `text-base font-semibold` |
-| Title padding | 16px horizontal | `px-4` |
-| Pills container | Horizontal scroll | `overflow-x-auto` |
-| Pills gap | 12px | `gap-3` |
-| Pill padding | 16px container | `pl-4 pr-4` |
+| Container margin | 16px horizontal | `mx-4` |
+| Background | Elevated surface with gradient | `bg-gradient-to-br from-card to-surface-elevated-2` |
+| Border | 1px primary at 20% | `border border-primary/20` |
+| Border radius | 16px | `rounded-2xl` |
+| Padding | 20px | `p-5` |
+| Sage avatar | 48px, curious expression | `h-12 w-12` |
+| Question text | 16px | `text-base` |
+| MCQ chips | 40px height, pill shape | `h-10 rounded-full` |
 
-#### Action Pill Component
+#### MCQ Chip States
 
-| Element | Spec | Tailwind |
-|---------|------|----------|
-| Background | `#2C2C2C` | `bg-muted` |
-| Border radius | 12px | `rounded-lg` |
-| Padding | 16px | `p-4` |
-| Min width | 80px | `min-w-[80px]` |
-| Icon | 24px | `h-6 w-6` |
-| Label | 12px | `text-xs` |
-| Touch target | 44px min | `min-h-11` |
-
-#### Check-in Highlight
-
-When daily check-in is incomplete, highlight the check-in pill:
-
-```tsx
-<button className={cn(
-  "p-4 rounded-lg min-w-[80px] min-h-11",
-  isCheckInComplete ? "bg-muted" : "bg-primary/10 border border-primary"
-)}>
-```
+| State | Background | Border |
+|-------|------------|--------|
+| Default | `surface-elevated-2` | `border` |
+| Hover | `surface-elevated-3` | `border-strong` |
+| Selected | `primary-500` | `primary-600` |
 
 #### Implementation
 
 ```tsx
-const quickActions = [
-  { id: 'checkin', icon: ClipboardCheck, label: 'Check In', route: '/checkin' },
-  { id: 'meal', icon: Utensils, label: 'Log Meal', route: '/nutrition/log' },
-  { id: 'workout', icon: Dumbbell, label: 'Log Workout', route: '/fitness/log' },
-  { id: 'mood', icon: Smile, label: 'Log Mood', route: '/wellbeing/mood' },
-];
+<section className="mx-4 mt-4">
+  <div className="bg-gradient-to-br from-card to-surface-elevated-2 border border-primary/20 rounded-2xl p-5">
+    {/* Sage and Question */}
+    <div className="flex items-start gap-3">
+      <SageAvatar size="md" expression="curious" />
+      <p className="text-base text-foreground flex-1">
+        I noticed you slept better last week. What changed?
+      </p>
+    </div>
 
-<section className="mt-6">
-  <h2 className="text-base font-semibold text-foreground px-4 mb-3">
-    Quick Actions
-  </h2>
-  <div className="overflow-x-auto scrollbar-hide">
-    <div className="flex gap-3 px-4">
-      {quickActions.map((action) => (
+    {/* MCQ Chips */}
+    <div className="flex flex-wrap gap-2 mt-4">
+      {options.map((option) => (
         <button
-          key={action.id}
-          onClick={() => navigate(action.route)}
-          className={cn(
-            "flex flex-col items-center justify-center",
-            "p-4 rounded-lg min-w-[80px] min-h-11",
-            "transition-transform duration-150 ease-out active:scale-[0.98]",
-            action.id === 'checkin' && !isCheckInComplete
-              ? "bg-primary/10 border border-primary"
-              : "bg-muted"
-          )}
+          key={option.value}
+          onClick={() => handleSelect(option.value)}
+          className="h-10 px-4 rounded-full bg-surface-elevated-2 border border-border text-sm"
         >
-          <action.icon className="h-6 w-6 text-foreground mb-2" />
-          <span className="text-xs text-muted-foreground">{action.label}</span>
+          {option.emoji} {option.label}
         </button>
       ))}
+      <button
+        onClick={handleExpand}
+        className="h-10 px-4 rounded-full bg-surface-elevated-2 border border-border text-sm"
+      >
+        📝 Tell me more...
+      </button>
     </div>
   </div>
 </section>
@@ -545,89 +271,170 @@ const quickActions = [
 
 ---
 
-### 6. Today's Activity Summary
+### 4. Conversation Stream
 
-A compact feed of today's logged activities.
+Scrollable chat history with user and AI messages.
 
 #### Layout
 
 ```
-Today's Activity
+Today
 ─────────────────────────────────
-🏃 Morning Run · 5.2km · 8:30am
-🥗 Lunch logged · 650 cal · 12:45pm
-😊 Mood: Good · 2:00pm
+      ┌─────────────────────────┐
+      │ Feeling tired but went  │  ← User message
+      │ for a short walk anyway │
+      └─────────────────────────┘
+                          12:34 PM
+
+┌────────────────────────────┐
+│ 🤖 That's great! Even short│  ← AI message
+│ walks count. Energy now?   │
+└────────────────────────────┘
+12:35 PM
+
+      ┌─────────────────────────┐
+      │ 🎤 Voice note (0:23)    │  ← Voice note
+      └─────────────────────────┘
+                          12:36 PM
 ```
 
 #### Specifications
 
 | Element | Spec | Tailwind |
 |---------|------|----------|
-| Section margin | 24px top | `mt-6` |
-| Horizontal padding | 16px | `px-4` |
-| Section title | 16px, Semibold | `text-base font-semibold` |
-| List gap | 0 (use dividers) | `divide-y divide-border` |
-| Item padding | 16px vertical | `py-4` |
-| Icon | 16px | `h-4 w-4` |
-| Activity text | 14px | `text-sm` |
-| Timestamp | 12px, Muted | `text-xs text-muted-foreground` |
+| Container | Scrollable, flex-1 | `flex-1 overflow-y-auto` |
+| Padding | 16px horizontal | `px-4` |
+| Day divider | 12px, muted, center | `text-xs text-muted-foreground text-center` |
+| Message gap | 12px | `space-y-3` |
 
-#### Activity Item Colors
+#### User Message Bubble
 
-| Activity Type | Icon | Color |
-|---------------|------|-------|
-| Workout | Running, Dumbbell | `text-fitness-500` |
-| Meal | Utensils | `text-nutrition-500` |
-| Mood | Smile | `text-wellbeing-500` |
-| Sleep | Moon | `text-wellbeing-500` |
+| Element | Spec | Tailwind |
+|---------|------|----------|
+| Alignment | Right | `ml-auto` |
+| Background | `primary-600` | `bg-primary-600` |
+| Max width | 80% | `max-w-[80%]` |
+| Padding | 12px 16px | `px-4 py-3` |
+| Border radius | 16px, 4px bottom-right | `rounded-2xl rounded-br-sm` |
+| Timestamp | Below, right, muted | `text-xs text-muted-foreground` |
+
+#### AI Message Bubble
+
+| Element | Spec | Tailwind |
+|---------|------|----------|
+| Alignment | Left | `mr-auto` |
+| Background | `surface-elevated-2` | `bg-surface-elevated-2` |
+| Max width | 80% | `max-w-[80%]` |
+| Padding | 12px 16px | `px-4 py-3` |
+| Border radius | 4px top-left, 16px rest | `rounded-2xl rounded-tl-sm` |
+| Avatar | 32px Sage, optional | `h-8 w-8` |
 
 #### Implementation
 
 ```tsx
-interface Activity {
-  id: string;
-  type: 'workout' | 'meal' | 'mood' | 'sleep';
-  title: string;
-  detail: string;
-  timestamp: string;
-}
+<section className="flex-1 overflow-y-auto px-4 py-4">
+  {/* Day divider */}
+  <div className="text-xs text-muted-foreground text-center mb-4">
+    Today
+  </div>
 
-const activityIcons = {
-  workout: { icon: Dumbbell, color: 'text-fitness-500' },
-  meal: { icon: Utensils, color: 'text-nutrition-500' },
-  mood: { icon: Smile, color: 'text-wellbeing-500' },
-  sleep: { icon: Moon, color: 'text-wellbeing-500' },
-};
-
-<section className="mt-6 px-4 pb-24">
-  <h2 className="text-base font-semibold text-foreground mb-3">
-    Today's Activity
-  </h2>
-  <div className="divide-y divide-border">
-    {activities.map((activity) => {
-      const { icon: Icon, color } = activityIcons[activity.type];
-      return (
-        <div key={activity.id} className="py-4 flex items-center gap-3">
-          <Icon className={cn("h-4 w-4", color)} />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm text-foreground truncate">
-              {activity.title}
-              <span className="text-muted-foreground"> · {activity.detail}</span>
-            </p>
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {activity.timestamp}
-          </span>
+  <div className="space-y-3">
+    {messages.map((msg) => (
+      <div key={msg.id} className={cn(
+        "max-w-[80%]",
+        msg.type === 'user' ? "ml-auto" : "mr-auto"
+      )}>
+        <div className={cn(
+          "px-4 py-3",
+          msg.type === 'user'
+            ? "bg-primary-600 rounded-2xl rounded-br-sm"
+            : "bg-surface-elevated-2 rounded-2xl rounded-tl-sm"
+        )}>
+          <p className="text-sm text-foreground">{msg.content}</p>
         </div>
-      );
-    })}
+        <span className={cn(
+          "text-xs text-muted-foreground mt-1 block",
+          msg.type === 'user' ? "text-right" : "text-left"
+        )}>
+          {msg.timestamp}
+        </span>
+      </div>
+    ))}
   </div>
 </section>
 ```
 
 ---
 
-### 7. Bottom Tab Navigation
+### 5. Input Bar
+
+Always-visible input with equal emphasis on text and voice.
+
+#### Layout
+
+```
+┌──────────────────────────────────────────┐
+│  ┌────────────────────────────────────┐  │
+│  │ 💬 Type or speak...         🎤  📎│  │
+│  └────────────────────────────────────┘  │
+└──────────────────────────────────────────┘
+```
+
+#### Specifications
+
+| Element | Spec | Tailwind |
+|---------|------|----------|
+| Container | Fixed above tab bar | `fixed bottom-16` |
+| Padding | 16px horizontal, 8px vertical | `px-4 py-2` |
+| Background | Background color | `bg-background` |
+| Input height | 48px | `h-12` |
+| Input background | `surface-elevated-1` | `bg-card` |
+| Border radius | 24px | `rounded-3xl` |
+| Voice button | 40px, teal | `h-10 w-10 bg-primary` |
+| Attach button | 40px, muted | `h-10 w-10` |
+
+#### Input States
+
+| State | Visual |
+|-------|--------|
+| Idle | Placeholder visible, mic prominent |
+| Typing | Text cursor, send button appears |
+| Recording | Red pulse, waveform, timer |
+| Expanded | Multi-line textarea visible |
+
+#### Implementation
+
+```tsx
+<div className="fixed bottom-16 left-0 right-0 px-4 py-2 bg-background">
+  <div className="flex items-center gap-2 h-12 px-4 bg-card rounded-3xl">
+    {/* Input field */}
+    <input
+      type="text"
+      placeholder="Type or speak..."
+      className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+      value={input}
+      onChange={(e) => setInput(e.target.value)}
+    />
+
+    {/* Voice button */}
+    <button
+      className="h-10 w-10 rounded-full bg-primary flex items-center justify-center"
+      onClick={startRecording}
+    >
+      <Mic className="h-5 w-5 text-primary-foreground" />
+    </button>
+
+    {/* Attach button (optional) */}
+    <button className="h-10 w-10 rounded-full flex items-center justify-center text-muted-foreground">
+      <Paperclip className="h-5 w-5" />
+    </button>
+  </div>
+</div>
+```
+
+---
+
+### 6. Bottom Tab Navigation
 
 Fixed bottom navigation bar.
 
@@ -648,148 +455,11 @@ Fixed bottom navigation bar.
 |---------|------|----------|
 | Position | Fixed bottom | `fixed bottom-0 left-0 right-0` |
 | Height | 64px + safe area | `h-16` |
-| Background | `#1E1E1E` | `bg-card` |
-| Border top | `#404040` | `border-t border-border` |
-| Z-index | 30 | `z-30` |
-| Safe area padding | env(safe-area-inset-bottom) | `pb-safe` |
-
-#### Tab Item
-
-| Element | Spec | Tailwind |
-|---------|------|----------|
-| Touch target | 44x44px min | `min-h-11 min-w-11` |
-| Icon | 24px | `h-6 w-6` |
-| Label | 10px | `text-[10px]` |
-| Active color | `#00BCD4` | `text-primary` |
-| Inactive color | `#757575` | `text-muted-foreground` |
-
-#### Implementation
-
-```tsx
-const tabs = [
-  { id: 'home', icon: Home, label: 'Home', route: '/' },
-  { id: 'insights', icon: BarChart2, label: 'Insights', route: '/insights' },
-  { id: 'coach', icon: MessageCircle, label: 'Coach', route: '/coach' },
-  { id: 'settings', icon: Settings, label: 'Settings', route: '/settings' },
-];
-
-<nav className="fixed bottom-0 left-0 right-0 z-30 h-16 bg-card border-t border-border pb-safe">
-  <div className="flex justify-around items-center h-full px-4">
-    {tabs.map((tab) => {
-      const isActive = currentRoute === tab.route;
-      return (
-        <button
-          key={tab.id}
-          onClick={() => navigate(tab.route)}
-          className={cn(
-            "min-h-11 min-w-11 flex flex-col items-center justify-center",
-            "transition-colors duration-150"
-          )}
-        >
-          <tab.icon className={cn(
-            "h-6 w-6",
-            isActive ? "text-primary" : "text-muted-foreground"
-          )} />
-          <span className={cn(
-            "text-[10px] mt-1",
-            isActive ? "text-primary font-medium" : "text-muted-foreground"
-          )}>
-            {tab.label}
-          </span>
-        </button>
-      );
-    })}
-  </div>
-</nav>
-```
-
----
-
-## Progress Ring Component
-
-Reusable progress ring for scores and metrics.
-
-### Props
-
-```tsx
-interface ProgressRingProps {
-  value: number;           // 0-100
-  size?: 'sm' | 'md' | 'lg';
-  color?: string;          // Tailwind stroke class
-  trackColor?: string;
-  strokeWidth?: number;
-  showValue?: boolean;
-  animated?: boolean;
-  className?: string;
-}
-```
-
-### Size Variants
-
-| Size | Dimensions | Stroke | Value Font |
-|------|------------|--------|------------|
-| `sm` | 48x48px | 4px | 16px |
-| `md` | 80x80px | 6px | 24px |
-| `lg` | 120x120px | 8px | 48px |
-
-### Implementation
-
-```tsx
-const sizes = {
-  sm: { dim: 48, stroke: 4, radius: 20, font: 'text-base' },
-  md: { dim: 80, stroke: 6, radius: 34, font: 'text-2xl' },
-  lg: { dim: 120, stroke: 8, radius: 54, font: 'text-5xl' },
-};
-
-export function ProgressRing({
-  value,
-  size = 'md',
-  color = 'stroke-primary',
-  trackColor = 'stroke-muted',
-  showValue = false,
-  animated = true,
-  className,
-}: ProgressRingProps) {
-  const { dim, stroke, radius, font } = sizes[size];
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - value / 100);
-
-  return (
-    <div className={cn("relative", className)} style={{ width: dim, height: dim }}>
-      <svg className="w-full h-full -rotate-90" viewBox={`0 0 ${dim} ${dim}`}>
-        {/* Track */}
-        <circle
-          cx={dim / 2}
-          cy={dim / 2}
-          r={radius}
-          fill="none"
-          className={trackColor}
-          strokeWidth={stroke}
-        />
-        {/* Progress */}
-        <circle
-          cx={dim / 2}
-          cy={dim / 2}
-          r={radius}
-          fill="none"
-          className={cn(color, animated && "transition-all duration-500 ease-out")}
-          strokeWidth={stroke}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-        />
-      </svg>
-      {showValue && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className={cn(font, "font-bold tabular-nums text-foreground")}>
-            {value}
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-```
+| Background | `card` | `bg-card` |
+| Border top | `border` | `border-t border-border` |
+| Z-index | 50 | `z-50` |
+| Active icon | `primary-500` | `text-primary` |
+| Inactive icon | `muted-foreground` | `text-muted-foreground` |
 
 ---
 
@@ -800,79 +470,27 @@ export function ProgressRing({
 | Step | Element | Animation | Duration | Delay |
 |------|---------|-----------|----------|-------|
 | 1 | Header | Fade in | 200ms | 0ms |
-| 2 | Overall Score | Fade in + Scale | 300ms | 100ms |
-| 3 | Score Ring | Fill animation | 500ms | 200ms |
-| 4 | Fitness Card | Slide up + Fade | 200ms | 250ms |
-| 5 | Nutrition Card | Slide up + Fade | 200ms | 300ms |
-| 6 | Wellbeing Card | Slide up + Fade | 200ms | 350ms |
-| 7 | Insight Card | Slide up + Fade | 200ms | 400ms |
-| 8 | Quick Actions | Fade in | 200ms | 450ms |
-| 9 | Activity Feed | Fade in | 200ms | 500ms |
+| 2 | Creatures | Scale in + bounce | 400ms | 100ms |
+| 3 | AI Question Card | Slide up + Fade | 300ms | 300ms |
+| 4 | Conversation | Fade in | 200ms | 400ms |
+| 5 | Input bar | Slide up | 200ms | 500ms |
 
-### Framer Motion Implementation
+### Creature Animations
 
-```tsx
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-    },
-  },
-};
+| Animation | Trigger | Duration | Easing |
+|-----------|---------|----------|--------|
+| Idle breathing | Always | 3s loop | ease-in-out |
+| Tap reaction | On tap | 300ms | spring |
+| Score update | Data change | 500ms | ease-out |
+| Celebration | Score 80+ | 600ms | bounce |
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.2,
-      ease: [0, 0, 0.2, 1], // ease-out
-    },
-  },
-};
+### Message Animations
 
-<motion.main
-  variants={containerVariants}
-  initial="hidden"
-  animate="visible"
->
-  <motion.section variants={itemVariants}>
-    <Header />
-  </motion.section>
-  <motion.section variants={itemVariants}>
-    <OverallScore />
-  </motion.section>
-  {/* ... */}
-</motion.main>
-```
-
-### Micro-Interactions
-
-#### Card Press
-
-```tsx
-<motion.button
-  whileTap={{ scale: 0.98 }}
-  transition={{ duration: 0.15, ease: 'easeOut' }}
->
-```
-
-#### Score Update
-
-```tsx
-// Animate number changes
-<motion.span
-  key={score}
-  initial={{ opacity: 0, y: -10 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.2 }}
->
-  {score}
-</motion.span>
-```
+| Animation | Trigger | Duration |
+|-----------|---------|----------|
+| User message | On send | 200ms slide-in from right |
+| AI message | On receive | 200ms slide-in from left |
+| Typing indicator | AI processing | Continuous dot bounce |
 
 ---
 
@@ -880,94 +498,67 @@ const itemVariants = {
 
 ### Loading State
 
-Display skeleton placeholders matching the layout.
-
 ```tsx
 <div className="animate-pulse">
   {/* Header skeleton */}
-  <div className="h-20 px-4 pt-4">
+  <div className="h-16 px-4 pt-4 flex items-center justify-between">
     <div className="h-7 w-48 bg-muted rounded" />
-    <div className="h-4 w-32 bg-muted rounded mt-2" />
+    <div className="h-10 w-10 bg-muted rounded-full" />
   </div>
 
-  {/* Score skeleton */}
-  <div className="pt-6 pb-4 flex justify-center">
-    <div className="h-30 w-30 rounded-full bg-muted" />
+  {/* Creatures skeleton */}
+  <div className="px-4 py-5 flex justify-around">
+    <div className="w-16 h-20 bg-muted rounded-xl" />
+    <div className="w-16 h-20 bg-muted rounded-xl" />
+    <div className="w-16 h-20 bg-muted rounded-xl" />
   </div>
 
-  {/* Cards skeleton */}
-  <div className="px-4 grid grid-cols-2 gap-4">
-    <div className="h-[140px] bg-muted rounded-lg" />
-    <div className="h-[140px] bg-muted rounded-lg" />
-    <div className="h-[140px] bg-muted rounded-lg col-span-2" />
-  </div>
+  {/* AI Card skeleton */}
+  <div className="mx-4 h-40 bg-muted rounded-2xl" />
 </div>
 ```
 
 ### Empty State (New User)
 
-When no data exists yet.
+Sage welcomes the user with enthusiasm.
 
 ```tsx
 <section className="px-4 py-12 text-center">
-  <div className="h-24 w-24 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-    <Sparkles className="h-12 w-12 text-primary" />
-  </div>
+  <SageAvatar size="xl" expression="happy" className="mx-auto mb-6" />
   <h2 className="text-xl font-semibold text-foreground mb-2">
-    Welcome to yHealth!
+    Hi there! I'm Sage 👋
   </h2>
   <p className="text-sm text-muted-foreground mb-6 max-w-[280px] mx-auto">
-    Complete your first check-in to start tracking your wellness journey.
+    I'm your health companion. Let's start by getting to know you a bit!
   </p>
   <Button variant="primary" size="lg">
-    Start Check-in
+    Let's Go!
   </Button>
 </section>
 ```
 
-### Partial Data State
+### Celebration State
 
-When some pillars have data, others don't.
+When user achieves a goal or all pillars are 80+.
 
 ```tsx
-// Show score if available, otherwise show prompt
-{pillarData ? (
-  <span className="text-4xl font-bold">{pillarData.score}</span>
-) : (
-  <span className="text-sm text-muted-foreground">Tap to log</span>
+{trioPerfect && (
+  <Confetti intensity="max" />
 )}
-```
 
-### Error State
-
-```tsx
-<section className="px-4 py-12 text-center">
-  <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-  <h2 className="text-lg font-semibold text-foreground mb-2">
-    Couldn't load your data
-  </h2>
-  <p className="text-sm text-muted-foreground mb-4">
-    Please check your connection and try again.
-  </p>
-  <Button variant="secondary" onClick={refetch}>
-    Try Again
-  </Button>
+{/* Creatures do trio celebration dance */}
+<section className="px-4 py-5">
+  <div className="flex justify-around">
+    {pillars.map((pillar) => (
+      <PillarCreature
+        key={pillar.id}
+        pillar={pillar.id}
+        score={pillar.score}
+        celebrating={trioPerfect}
+      />
+    ))}
+  </div>
 </section>
-```
-
-### Pull to Refresh
-
-```tsx
-// Using react-native or similar
-<ScrollView
-  refreshControl={
-    <RefreshControl
-      refreshing={isRefreshing}
-      onRefresh={onRefresh}
-      tintColor="#00BCD4"
-    />
-  }
->
 ```
 
 ---
@@ -977,75 +568,27 @@ When some pillars have data, others don't.
 ### Semantic Structure
 
 ```tsx
-<main role="main" aria-label="Home Dashboard">
-  <header aria-label="User greeting">...</header>
-  <section aria-label="Overall wellness score">...</section>
-  <section aria-label="Health pillars">...</section>
-  <section aria-label="AI coach insight">...</section>
-  <section aria-label="Quick actions">...</section>
-  <section aria-label="Today's activities">...</section>
+<main role="main" aria-label="Home">
+  <header aria-label="Greeting">...</header>
+  <section aria-label="Health pillars" role="group">
+    <button aria-label="Fitness score: 78 out of 100">...</button>
+    <button aria-label="Nutrition score: 65 out of 100">...</button>
+    <button aria-label="Wellbeing score: 82 out of 100">...</button>
+  </section>
+  <section aria-label="AI coach question">...</section>
+  <section aria-label="Conversation history" role="log">...</section>
+  <form aria-label="Message input">...</form>
   <nav role="navigation" aria-label="Main navigation">...</nav>
 </main>
 ```
 
-### Progress Ring Accessibility
-
-```tsx
-<div
-  role="progressbar"
-  aria-valuenow={score}
-  aria-valuemin={0}
-  aria-valuemax={100}
-  aria-label={`${pillar} score: ${score} out of 100`}
->
-```
-
 ### Touch Targets
 
-All interactive elements must be at least 44x44px:
-
-```tsx
-<button className="min-h-11 min-w-11 p-3">
-```
+All interactive elements must be at least 44×44px.
 
 ### Reduced Motion
 
-```tsx
-// Check user preference
-const prefersReducedMotion = window.matchMedia(
-  '(prefers-reduced-motion: reduce)'
-).matches;
-
-// Disable animations
-<motion.div
-  animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
->
-```
-
-### Color Independence
-
-- All scores shown as numbers, not just colors
-- Trend arrows + text labels (not just icons)
-- Progress rings include numeric value
-
----
-
-## Responsive Considerations
-
-### Tablet (768px+)
-
-```tsx
-<div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-  <PillarCard pillar="fitness" />
-  <PillarCard pillar="nutrition" />
-  <PillarCard pillar="wellbeing" />
-</div>
-```
-
-### Large Phone (>400px width)
-
-- Increase card padding: `p-5 sm:p-6`
-- Larger score fonts: `text-4xl sm:text-5xl`
+Creatures use static images instead of animations when user prefers reduced motion.
 
 ---
 
@@ -1053,47 +596,37 @@ const prefersReducedMotion = window.matchMedia(
 
 ```tsx
 export default function HomePage() {
-  const { user, scores, insights, activities, isLoading } = useHomeData();
+  const { user, pillars, currentQuestion, messages, isLoading } = useHomeData();
+  const [input, setInput] = useState('');
 
   if (isLoading) return <HomePageSkeleton />;
 
+  const trioPerfect = pillars.every(p => p.score >= 80);
+
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background flex flex-col">
+      {trioPerfect && <Confetti intensity="max" />}
+
       {/* Header */}
       <Header user={user} />
 
-      {/* Overall Score */}
-      <OverallScoreSection score={scores.overall} />
+      {/* Pillar Creatures */}
+      <PillarCreaturesRow pillars={pillars} celebrating={trioPerfect} />
 
-      {/* Pillar Cards */}
-      <section className="px-4 mt-4">
-        <div className="grid grid-cols-2 gap-4">
-          <PillarCard
-            pillar="fitness"
-            score={scores.fitness.value}
-            trend={scores.fitness.trend}
-          />
-          <PillarCard
-            pillar="nutrition"
-            score={scores.nutrition.value}
-            trend={scores.nutrition.trend}
-          />
-          <PillarCard
-            pillar="wellbeing"
-            score={scores.wellbeing.value}
-            trend={scores.wellbeing.trend}
-          />
-        </div>
-      </section>
+      {/* AI Question Card */}
+      {currentQuestion && (
+        <AIQuestionCard question={currentQuestion} />
+      )}
 
-      {/* AI Insight */}
-      <InsightCard insight={insights[0]} />
+      {/* Conversation Stream */}
+      <ConversationStream messages={messages} className="flex-1" />
 
-      {/* Quick Actions */}
-      <QuickActionsSection />
-
-      {/* Activity Feed */}
-      <ActivityFeed activities={activities} />
+      {/* Input Bar */}
+      <MessageInput
+        value={input}
+        onChange={setInput}
+        className="fixed bottom-16 left-0 right-0"
+      />
 
       {/* Tab Bar */}
       <BottomTabBar activeTab="home" />
@@ -1108,8 +641,9 @@ export default function HomePage() {
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 2025-12-07 | Initial home page design specification |
+| 2.0 | 2025-12-20 | Conversation-first redesign with creatures |
+| 1.0 | 2025-12-07 | Initial dashboard-centric design |
 
 ---
 
-*yHealth Home Page Design v1.0 | Bevel-inspired dashboard for three-pillar wellness tracking*
+*yHealth Home Page Design v2.0 | Conversation-First with Pillar Creatures*

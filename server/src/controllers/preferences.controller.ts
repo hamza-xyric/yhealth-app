@@ -5,6 +5,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { logger } from '../services/logger.service.js';
 import type { AuthenticatedRequest } from '../types/index.js';
+import { notificationService } from '../services/notification.service.js';
 import type {
   NotificationPreferencesInput,
   CoachingPreferencesInput,
@@ -237,13 +238,13 @@ export const updateNotificationPreferences = asyncHandler(
         updates.push(`quiet_hours_enabled = $${paramIndex++}`);
         values.push(data.quietHours.enabled);
       }
-      if (data.quietHours.startTime) {
+      if (data.quietHours.start) {
         updates.push(`quiet_hours_start = $${paramIndex++}`);
-        values.push(data.quietHours.startTime);
+        values.push(data.quietHours.start);
       }
-      if (data.quietHours.endTime) {
+      if (data.quietHours.end) {
         updates.push(`quiet_hours_end = $${paramIndex++}`);
-        values.push(data.quietHours.endTime);
+        values.push(data.quietHours.end);
       }
     }
 
@@ -395,6 +396,16 @@ export const updateCoachingPreferences = asyncHandler(
       style: data.style,
       intensity: data.intensity,
     });
+
+    // Send notification for preference update
+    const updatedFields: string[] = [];
+    if (data.style) updatedFields.push('coachingStyle');
+    if (data.intensity) updatedFields.push('coachingIntensity');
+    if (data.preferredChannel) updatedFields.push('notificationChannels');
+    if (data.timezone) updatedFields.push('timezone');
+    if (updatedFields.length > 0) {
+      await notificationService.preferencesUpdated(userId, updatedFields);
+    }
 
     const formattedPreferences = transformPreferencesToAPI(updateResult.rows[0]);
 
@@ -658,13 +669,13 @@ export const updateAllPreferences = asyncHandler(
           updates.push(`quiet_hours_enabled = $${paramIndex++}`);
           values.push(data.notifications.quietHours.enabled);
         }
-        if (data.notifications.quietHours.startTime) {
+        if (data.notifications.quietHours.start) {
           updates.push(`quiet_hours_start = $${paramIndex++}`);
-          values.push(data.notifications.quietHours.startTime);
+          values.push(data.notifications.quietHours.start);
         }
-        if (data.notifications.quietHours.endTime) {
+        if (data.notifications.quietHours.end) {
           updates.push(`quiet_hours_end = $${paramIndex++}`);
-          values.push(data.notifications.quietHours.endTime);
+          values.push(data.notifications.quietHours.end);
         }
       }
       if (data.notifications.frequency) {

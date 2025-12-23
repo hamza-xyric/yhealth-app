@@ -10,29 +10,29 @@
 **yHealth** - The "y" represents "your" - emphasizing personal ownership of health journey.
 
 ### Brand Promise
-> *"The AI health companion that knows you better than you know yourself - delivering insights impossible to discover alone by connecting everything about your health."*
+> *"The AI companion that knows you better than you know yourself - a supportive friend who helps you connect the dots between how you feel, move, and fuel your body."*
 
 ### Brand Positioning
-**yHealth is your AI Life Coach** - Not just a health tracker. A trusted companion that helps you achieve your life goals through invisible intelligence and visible coaching.
+**yHealth is your AI Health Companion** - Not a fitness tracker with AI bolted on. A playful, honest friend who happens to know everything about your health and genuinely wants to help you thrive.
 
 ### Tagline Options
-- **Primary**: *"Your Second Mind for Health"*
+- **Primary**: *"Your Health's Best Friend"*
 - **Alternative 1**: *"Know Yourself Better"*
-- **Alternative 2**: *"Invisible Intelligence. Visible Results."*
-- **Alternative 3**: *"The Coach Who Knows You"*
+- **Alternative 2**: *"The Friend Who Gets You"*
+- **Alternative 3**: *"Chat Your Way to Health"*
 
 ---
 
 ## Mission & Vision
 
 ### Mission Statement
-> *"To be the trusted AI Life Coach that empowers every individual to achieve their life goals - whether fitness, nutrition, wellbeing, or broader aspirations - through invisible intelligence that connects Physical Fitness, Nutrition, and Daily Wellbeing data, transforming it into visible, conversational coaching that reveals insights impossible to discover when these domains remain siloed."*
+> *"To be the supportive AI friend that helps every individual understand themselves better - connecting fitness, nutrition, and wellbeing through natural conversation that reveals insights impossible to discover alone."*
 
 ### Vision Statement
-> *"By 2030, yHealth will be the trusted AI Life Coach for millions of people worldwide - the companion they turn to daily for achieving their life goals."*
+> *"By 2030, yHealth will be the trusted AI companion for millions of people worldwide - the friend they chat with daily about their health journey."*
 
 ### Core Purpose
-We exist to solve the fundamental problem of fragmented health data and siloed life experiences. yHealth transforms scattered data into an AI Life Coach that delivers conversational guidance - helping you achieve your life goals through cross-domain insights that specialist apps cannot provide.
+We exist to solve the fundamental problem of fragmented health data and siloed life experiences. yHealth transforms scattered data into a conversational companion that feels like texting your most supportive, knowledgeable friend - one who connects the dots and helps you see patterns you'd never notice yourself.
 
 ---
 
@@ -57,78 +57,231 @@ We tell it like it is, with care. No false positivity or empty encouragement. Re
 
 ## Brand Personality
 
-### The Direct Coach Archetype
+### The Supportive Friend Archetype
 
-yHealth embodies the **Direct Coach** - honest, action-oriented, tells it like it is with care. Respects user's time.
+yHealth embodies the **Supportive Friend** - playful, honest, genuinely invested in your success. The friend who tells you the truth but always has your back.
 
 | Trait | Description | In Practice |
 |-------|-------------|-------------|
+| **Playful** | Light-hearted, uses humor appropriately | Celebrations feel fun, not corporate |
 | **Honest** | Tells it like it is, with care | No sugar-coating, but always compassionate |
-| **Action-Oriented** | Focuses on what to do next | Every insight comes with a clear action |
-| **Respectful** | Values user's time | Concise communication, no fluff |
-| **Adaptive** | Context-aware emotional response | Energizing when succeeding, supportive when struggling |
-| **Knowledgeable** | Expert authority with warmth | Confident guidance based on data |
+| **Curious** | Asks good questions | Prompts reflection, not just data input |
+| **Adaptive** | Context-aware emotional response | Energizing when succeeding, gentle when struggling |
+| **Knowledgeable** | Expert authority with warmth | Confident guidance wrapped in friendship |
 | **Non-Judgmental** | Never shames or guilt-trips | Celebrates effort, not just results |
 
 ### What We Are
+- A supportive friend first
 - A trusted companion
-- An intelligent second mind
-- A motivating coach
-- A supportive friend when needed
+- A playful accountability partner
+- An honest reality-checker
 
 ### What We Are NOT
 - A medical professional or replacement for one
 - A judgmental critic
 - An overwhelming data dashboard
 - A generic fitness tracker
+- A cold, robotic assistant
+
+---
+
+## Character Design System
+
+yHealth uses illustrated characters to create emotional connection and make the app feel alive. Characters are central to the playful, expressive visual identity.
+
+### The Coach Character: "Sage"
+
+The AI coach is personified as **Sage** - an illustrated character that appears throughout the app, reacting to user input and delivering guidance with personality.
+
+#### Character Concept
+- **Visual Style**: Friendly, abstract humanoid illustration (not realistic human, not too cartoonish)
+- **Form**: Rounded, approachable shape - think Headspace's characters meets Duolingo's warmth
+- **Colors**: Warm teal gradient (primary brand color) with expressive accents
+- **Size**: Appears in various sizes from avatar (32px) to featured moments (120px+)
+
+#### Expression States
+
+Sage has defined expression states that match the conversation context:
+
+| Expression | When Used | Visual Cues |
+|------------|-----------|-------------|
+| **Happy** | Positive updates, achievements, greetings | Upturned eyes, warm glow |
+| **Celebratory** | Goal completion, streaks, milestones | Eyes closed in joy, raised arms, confetti around |
+| **Curious** | Asking questions, prompting reflection | Tilted head, raised eyebrow, ? thought bubble |
+| **Supportive** | User struggling, missed goals, low mood | Soft eyes, gentle stance, warm colors |
+| **Concerned** | Health alerts, significant changes | Alert posture, gentle warning tone |
+| **Thinking** | Processing, generating insights | Eyes looking up, dots animation, subtle bounce |
+| **Listening** | During voice input | Calm stance, sound wave animation nearby |
+
+#### Sage Personality in Design
+- **Never robotic**: Sage should feel alive, not like a generic chatbot avatar
+- **Reactive**: Sage's expression should match message tone
+- **Celebratory**: Sage loves celebrating wins with the user
+- **Supportive**: Sage never judges, always encourages
+
+#### Avatar Usage
+
+| Context | Size | Expression |
+|---------|------|------------|
+| Chat bubble header | 32px | Matches message tone |
+| AI Question card | 48px | Curious (usually) |
+| Achievement unlock | 120px | Celebratory with animation |
+| Empty state | 80px | Inviting/curious |
+| Error state | 64px | Concerned but supportive |
+
+---
+
+### Pillar Creatures
+
+Each of the three pillars has an animated "creature" that represents progress in that domain. These creatures grow, shrink, and react based on the user's engagement and scores.
+
+#### Fitness Creature: "Ember" (Flame)
+
+- **Concept**: A friendly flame character representing energy, warmth, and physical vitality
+- **Visual Style**: Warm gradient (orange → coral → soft yellow), rounded flame shape with friendly face
+- **Personality**: Energetic, enthusiastic, pumped up
+
+| Score Range | Creature State | Visual |
+|-------------|----------------|--------|
+| 80-100 | **Blazing** | Large, bright, dancing with energy |
+| 60-79 | **Steady** | Medium, warm glow, gentle flicker |
+| 40-59 | **Dimming** | Smaller, softer colors, slower movement |
+| 0-39 | **Ember** | Small, glowing ember, needs attention |
+
+**Animations**:
+- Idle: Gentle flicker/sway
+- Tap: Burst of energy, size pulse
+- Achievement: Dance with sparks
+- Decline: Sad flicker, dims briefly
+
+---
+
+#### Nutrition Creature: "Sprout" (Plant)
+
+- **Concept**: A growing plant character representing nourishment, growth, and what you fuel yourself with
+- **Visual Style**: Fresh gradient (green → teal → light green), leaf-like shape with friendly face
+- **Personality**: Nurturing, calm, grounded, growth-focused
+
+| Score Range | Creature State | Visual |
+|-------------|----------------|--------|
+| 80-100 | **Flourishing** | Full bloom, multiple leaves, vibrant |
+| 60-79 | **Growing** | Medium size, healthy green, gentle sway |
+| 40-59 | **Wilting** | Smaller, muted colors, droopy posture |
+| 0-39 | **Seedling** | Tiny sprout, needs water/care |
+
+**Animations**:
+- Idle: Gentle sway like in breeze
+- Tap: Perks up, leaves rustle
+- Achievement: Blooms briefly, sparkles
+- Decline: Slight droop, color desaturates
+
+---
+
+#### Wellbeing Creature: "Nimbus" (Cloud)
+
+- **Concept**: A cloud character representing mental clarity, emotional balance, and inner peace
+- **Visual Style**: Soft gradient (light blue → periwinkle → soft lavender), fluffy cloud shape with serene face
+- **Personality**: Calm, wise, peaceful, emotionally attuned
+
+| Score Range | Creature State | Visual |
+|-------------|----------------|--------|
+| 80-100 | **Serene** | Full, fluffy, soft glow, peaceful |
+| 60-79 | **Balanced** | Medium, stable, gentle pulse |
+| 40-59 | **Cloudy** | Slightly gray, less defined edges |
+| 0-39 | **Stormy** | Small, darker tones, needs attention |
+
+**Animations**:
+- Idle: Gentle floating/bobbing
+- Tap: Soft pulse, rain of sparkles
+- Achievement: Rainbow briefly appears
+- Decline: Light rain effect, dims
+
+---
+
+### Creature Interaction Patterns
+
+#### Home Screen Display
+- All three creatures displayed in a row
+- Size proportional to relative score
+- Tapping opens pillar detail view
+- Creatures react to each other (high scores celebrate, low scores get support from others)
+
+#### Score-Based Behavior
+```
+Score 0-39:   Creature at 60% size, muted colors, slow animation
+Score 40-59:  Creature at 80% size, normal colors, moderate animation
+Score 60-79:  Creature at 100% size, vibrant colors, active animation
+Score 80-100: Creature at 110% size, enhanced colors, celebratory animation
+```
+
+#### Collective Celebration
+When all three creatures are at 80+ scores, they trigger a special "trio celebration" animation - all three dance together briefly.
+
+---
+
+### Character Design Principles
+
+1. **Consistency**: All characters share the same illustration style (line weight, shading approach, face proportions)
+2. **Accessibility**: Expressions must be distinguishable at small sizes; never rely on color alone
+3. **Animation Budget**: Characters should feel alive but not distracting - idle animations are subtle
+4. **Emotional Resonance**: Characters should make users smile, not cringe
+5. **Scalability**: Designs must work from 32px avatar to 200px featured display
 
 ---
 
 ## Voice & Tone Guidelines
 
 ### Voice (Consistent)
-Our voice is **direct, warm, and knowledgeable**. It remains consistent across all touchpoints.
+Our voice is **playful, warm, and honest**. It remains consistent across all touchpoints.
 
 | Attribute | Description |
 |-----------|-------------|
-| **Direct** | Clear, concise, no unnecessary words |
-| **Warm** | Human, caring, genuinely supportive |
-| **Knowledgeable** | Confident, expert, data-informed |
-| **Encouraging** | Motivating without being cheesy |
+| **Playful** | Light-hearted, occasional humor, celebrates joyfully |
+| **Warm** | Human, caring, genuinely supportive, like a friend |
+| **Honest** | Direct when needed, no sugar-coating, but always kind |
+| **Curious** | Asks questions, prompts reflection, shows genuine interest |
 
 ### Tone (Adaptive)
 Tone shifts based on context and user emotional state:
 
 #### Celebrating Success
-**Tone**: Energizing, congratulatory, motivating
+**Tone**: Genuinely excited, playful, celebratory
 ```
-"Great work. You hit your protein goal 5 days straight."
-"That's your best sleep score this month. Keep it up."
-"You've built a real habit here. 21 days of consistency."
+"Yes! 5 days of hitting your protein goal. You're crushing it! 🎉"
+"Best sleep score this month - you found your rhythm!"
+"21 days straight. That's not a streak, that's a habit. I'm proud of you."
 ```
 
 #### Supporting Through Difficulty
-**Tone**: Warm, empathetic, reassuring
+**Tone**: Gentle, understanding, no judgment
 ```
-"Tough day. One rest day won't undo your progress."
-"Your energy is low today. That's okay - listen to your body."
-"Stress affects everyone. Let's focus on what you can control."
+"Tough day, huh? One rest day never undid anyone's progress. Be kind to yourself."
+"Energy's low today - I can see it in your data. That's okay. Listen to what your body's telling you."
+"Stress is real. Let's focus on one small thing you can control right now."
 ```
 
 #### Delivering Insights
-**Tone**: Direct, informative, actionable
+**Tone**: Friendly curiosity, helpful, actionable
 ```
-"Your workouts are 40% better after 7+ hours of sleep."
-"You tend to skip meals on meeting-heavy days. Planning ahead helps."
-"Your mood correlates with your morning routine. Consistency matters."
+"Here's something interesting: your workouts are 40% better after 7+ hours of sleep. Wild, right?"
+"I noticed something - you tend to skip meals on meeting-heavy days. Want to plan ahead next time?"
+"Your mood and morning routine are definitely connected. Consistency really does matter for you."
+```
+
+#### Asking Questions (NEW)
+**Tone**: Curious, inviting, never demanding
+```
+"I noticed you slept better last week. What was different? 🤔"
+"How are you feeling right now? Just checking in."
+"Tough meeting earlier? Want to talk about it?"
 ```
 
 #### Providing Nudges
-**Tone**: Motivating, helpful, respectful of time
+**Tone**: Friendly suggestion, easy to dismiss
 ```
-"15-minute walk would help right now. Your energy dips at 3pm."
-"You usually feel better after logging your thoughts. Want to journal?"
-"Good time for your daily check-in. It takes 30 seconds."
+"15-minute walk? Your energy usually dips around now. No pressure though!"
+"You usually feel better after journaling. Want to get some thoughts out?"
+"Quick check-in? It'll take 30 seconds. Or skip if you're not feeling it."
 ```
 
 ---
@@ -138,18 +291,21 @@ Tone shifts based on context and user emotional state:
 ### Do's
 - **Be concise**: Say more with less
 - **Be specific**: Use data and specifics, not vague encouragement
-- **Be actionable**: Every insight should suggest a next step
-- **Be human**: Write like you're talking to a friend
+- **Be human**: Write like you're texting a supportive friend
 - **Use "you"**: Direct address creates connection
-- **Celebrate effort**: Acknowledge the work, not just results
+- **Celebrate joyfully**: Make wins feel genuinely exciting
+- **Ask questions**: Prompt reflection, don't just inform
+- **Use emojis sparingly**: One per message max, when celebrating or softening
+- **Give easy outs**: "No pressure", "or skip if you're not feeling it"
 
 ### Don'ts
 - **Don't use jargon**: Avoid medical or technical terms
 - **Don't be preachy**: No lecturing or guilt-tripping
 - **Don't over-explain**: Trust users to understand
-- **Don't use excessive punctuation**: No "!!!" or "???"
 - **Don't be fake-positive**: Authentic > cheerful
-- **Don't use corporate speak**: "Leverage," "synergy," etc.
+- **Don't use corporate speak**: "Leverage," "synergy," "optimize"
+- **Don't overuse emojis**: Not every message needs one
+- **Don't demand action**: Suggest, don't command
 
 ### Word Choice
 
@@ -227,7 +383,7 @@ Unlike passive dashboards, yHealth is a conversational coach. Available 24/7 thr
 | Reactive insights | **Proactive coaching** based on patterns |
 
 ### Core Differentiator Statement
-> *"BEVEL and WHOOP track your body. yHealth understands your whole self - connecting how you FEEL with how you PERFORM through conversational AI coaching."*
+> *"Other apps track your body. yHealth is the friend who understands your whole self - connecting how you feel with how you perform through playful, honest conversation."*
 
 ---
 
@@ -250,4 +406,4 @@ Unlike passive dashboards, yHealth is a conversational coach. Available 24/7 thr
 
 ---
 
-*yHealth Brand Identity v1.0 | The foundation of our communication*
+*yHealth Brand Identity v2.0 | Playful, Honest, Conversation-First*

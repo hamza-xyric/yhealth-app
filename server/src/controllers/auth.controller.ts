@@ -10,6 +10,7 @@ import { emailService, smsService, logger } from "../services/index.js";
 import { mailHelper } from "../helper/mail.js";
 import { env } from "../config/env.config.js";
 import type { AuthenticatedRequest } from "../types/index.js";
+import { notificationService } from "../services/notification.service.js";
 import type {
   RegisterInput,
   LoginInput,
@@ -300,6 +301,9 @@ export const verifyRegistration = asyncHandler(
     // Send welcome email
     await emailService.sendWelcomeEmail(user.email, user.firstName);
 
+    // Send welcome notification
+    await notificationService.welcomeUser(user.id, user.firstName);
+
     // Generate tokens
     const tokens = generateTokens({
       userId: user.id,
@@ -422,6 +426,9 @@ export const socialAuth = asyncHandler(
       if (user.firstName) {
         await emailService.sendWelcomeEmail(user.email, user.firstName);
       }
+
+      // Send welcome notification
+      await notificationService.welcomeUser(user.id, user.firstName);
 
       logger.info("Social registration", { userId: user.id, provider });
     }

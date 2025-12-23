@@ -114,7 +114,7 @@ As a **Busy Professional** (P2), I want to quickly start a voice conversation wi
 ## F2.2: REAL-TIME AI CONVERSATION
 
 ### Description
-Natural, context-aware voice conversation engine powered by Azure OpenAI that conducts real-time dialogue with users, maintains conversation context across sessions, references user's health data, and delivers emotionally intelligent responses that feel like talking to a knowledgeable, caring health coach.
+Natural, context-aware voice conversation engine powered by Claude/DeepSeek that conducts real-time dialogue with users, maintains conversation context across sessions, references user's health data, and delivers emotionally intelligent responses that feel like talking to a knowledgeable, caring health coach.
 
 ### User Story
 As a **Holistic Health Seeker** (P1), I want to have natural conversations with my AI coach that reference my complete health history and understand my emotions so that I receive personalized, empathetic guidance without repeating my situation every time.
@@ -252,7 +252,7 @@ AI (0.9s): "Perfect! Enjoy your walk. Talk soon!"
 - **E5, E6, E7 (All Pillars):** Data sources for personalized conversation content
 - **E4 (Mobile App):** Real-time transcription display, conversation history
 - **F2.3 (Voice Tone Analysis):** Emotional state detection informs AI response style
-- **Azure OpenAI:** LLM backend for natural language processing
+- **Claude/DeepSeek:** LLM backend for natural language processing
 - **Speech-to-Text & Text-to-Speech:** Real-time voice processing
 
 ### MVP Status
@@ -379,7 +379,7 @@ As a **Holistic Health Seeker** (P1), I want my AI coach to understand how I'm f
 - **E7 (Wellbeing Pillar):** Emotion data logged as mood entries
 - **F5.3 (Recovery Monitoring):** Voice stress contributes to Mental Recovery Score
 - **F2.2 (Real-Time AI Conversation):** Tone analysis informs AI response generation
-- **Azure Speech Analytics:** Emotion detection API (or equivalent)
+- **AWS Transcribe:** Emotion detection API (or equivalent)
 - **Speech-to-Text Pipeline:** Real-time audio processing for analysis
 
 ### MVP Status
@@ -789,7 +789,7 @@ Next coaching session: Sunday, Dec 8, 7:00pm
 - **E4 (Mobile App):** Primary summary storage and display UI
 - **E3 (WhatsApp):** Secondary summary delivery channel
 - **E8 (Cross-Domain Intelligence):** Insight linking in summaries
-- **Azure OpenAI:** Summary generation and action item extraction
+- **Claude/DeepSeek:** Summary generation and action item extraction
 
 ### MVP Status
 [X] MVP Core
@@ -1025,9 +1025,9 @@ As a **Holistic Health Seeker** (P1), I want to customize my AI coach's voice an
 
 **Voice Pipeline:**
 ```
-User speaks → Speech-to-Text (Azure) → NLP Processing (Azure OpenAI)
+User speaks → Speech-to-Text (AWS Transcribe) → NLP Processing (Claude/DeepSeek)
 → Context Engine (user data + conversation history) → Response Generation
-→ Text-to-Speech (Azure) → AI speaks → User hears (within 2s total)
+→ Text-to-Speech (AWS Polly) → AI speaks → User hears (within 2s total)
 
 Parallel: Voice Tone Analysis → Emotion Detection → Mental Recovery Score
 ```
@@ -1128,7 +1128,7 @@ POST   /api/v1/voice/emergency               - Trigger emergency support protoco
 - **Access Control:** Only user can access own call transcripts and summaries
 - **Data Retention:** Transcripts stored for 24 months, then deleted (or per user request)
 - **GDPR Compliance:** Right to erasure deletes all call records within 30 days
-- **HIPAA Compliance:** Azure OpenAI HIPAA-compliant infrastructure for health conversations
+- **HIPAA Compliance:** Claude/DeepSeek HIPAA-compliant infrastructure for health conversations
 - **Biometric Data:** Voice tone metadata (not raw audio) stored as health data
 - **Crisis Data:** Emergency calls flagged, safety protocols followed, logs retained for audit
 

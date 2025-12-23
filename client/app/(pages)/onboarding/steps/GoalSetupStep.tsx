@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Target,
   Sparkles,
@@ -12,9 +12,17 @@ import {
   Calendar,
   TrendingUp,
   Heart,
+  Edit3,
+  Save,
+  X,
+  Clock,
+  Gauge,
+  Loader2,
 } from "lucide-react";
 import { useOnboarding, Goal } from "../OnboardingContext";
+import { useOnboardingApi } from "../hooks/useOnboardingApi";
 import { StepNavigation } from "../components/StepNavigation";
+import { SuccessModal } from "@/components/common/success-modal";
 
 // Mock suggested goals based on assessment
 const generateSuggestedGoals = (goalCategory: string): Goal[] => {
@@ -117,8 +125,15 @@ export function GoalSetupStep() {
     prevStep,
   } = useOnboarding();
 
+  const { acceptSuggestedGoals, isLoading: apiLoading, error: apiError } = useOnboardingApi();
+
   const [expandedGoal, setExpandedGoal] = useState<string | null>(null);
   const [confidenceValue, setConfidenceValue] = useState<Record<string, number>>({});
+  const [editingGoal, setEditingGoal] = useState<string | null>(null);
+  const [editedGoals, setEditedGoals] = useState<Record<string, Partial<Goal>>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Generate suggested goals on mount
   useEffect(() => {
@@ -149,7 +164,105 @@ export function GoalSetupStep() {
     updateGoalConfidence(goalId, value);
   };
 
-  const canContinue = confirmedGoals.length > 0;
+  const handleStartEdit = (goal: Goal) => {
+    setEditingGoal(goal.id!);
+    setEditedGoals((prev) => ({
+      ...prev,
+      [goal.id!]: {
+        targetValue: goal.targetValue,
+        timeline: goal.timeline,
+        motivation: goal.motivation,
+      },
+    }));
+    setExpandedGoal(goal.id!);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingGoal(null);
+  };
+
+  const handleSaveEdit = (goalId: string) => {
+    const goal = suggestedGoals.find((g) => g.id === goalId);
+    if (goal && editedGoals[goalId]) {
+      const updatedGoal: Goal = {
+        ...goal,
+        targetValue: editedGoals[goalId].targetValue ?? goal.targetValue,
+        timeline: editedGoals[goalId].timeline ?? goal.timeline,
+        motivation: editedGoals[goalId].motivation ?? goal.motivation,
+      };
+      // Update in suggested goals and confirmed goals if applicable
+      setSuggestedGoals(suggestedGoals.map((g) => (g.id === goalId ? updatedGoal : g)));
+      if (confirmedGoals.some((g) => g.id === goalId)) {
+        confirmGoal(updatedGoal);
+      }
+    }
+    setEditingGoal(null);
+  };
+
+  const handleEditChange = (goalId: string, field: string, value: number | string) => {
+    setEditedGoals((prev) => ({
+      ...prev,
+      [goalId]: {
+        ...prev[goalId],
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleTimelineChange = (goalId: string, weeks: number) => {
+    const goal = suggestedGoals.find((g) => g.id === goalId);
+    if (goal) {
+      const newTargetDate = new Date();
+      newTargetDate.setDate(newTargetDate.getDate() + weeks * 7);
+      setEditedGoals((prev) => ({
+        ...prev,
+        [goalId]: {
+          ...prev[goalId],
+          timeline: {
+            ...goal.timeline,
+            durationWeeks: weeks,
+            targetDate: newTargetDate,
+          },
+        },
+      }));
+    }
+  };
+
+  const getTimelineOptions = () => [
+    { weeks: 4, label: "1 month" },
+    { weeks: 8, label: "2 months" },
+    { weeks: 12, label: "3 months" },
+    { weeks: 16, label: "4 months" },
+    { weeks: 24, label: "6 months" },
+  ];
+
+  // Handle saving goals to API and proceeding
+  const handleContinue = useCallback(async () => {
+    if (confirmedGoals.length === 0) return;
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      // Save confirmed goals to the API
+      await acceptSuggestedGoals(confirmedGoals);
+      // Show success modal
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error("Failed to save goals:", err);
+      setError("Failed to save your goals. Please try again.");
+      setIsSaving(false);
+    }
+  }, [confirmedGoals, acceptSuggestedGoals]);
+
+  // Handle success modal close - proceed to next step
+  const handleSuccessModalClose = useCallback(() => {
+    setShowSuccessModal(false);
+    setIsSaving(false);
+    nextStep();
+  }, [nextStep]);
+
+  const canContinue = confirmedGoals.length > 0 && !isSaving;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -268,19 +381,47 @@ export function GoalSetupStep() {
                     </div>
                   </div>
 
-                  {/* Expand Button */}
-                  <button
-                    onClick={() =>
-                      setExpandedGoal(isExpanded ? null : goal.id!)
-                    }
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    {isExpanded ? (
-                      <ChevronUp className="w-5 h-5 text-slate-400" />
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    {editingGoal === goal.id ? (
+                      <>
+                        <button
+                          onClick={() => handleSaveEdit(goal.id!)}
+                          className="p-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 transition-colors"
+                          title="Save changes"
+                        >
+                          <Save className="w-4 h-4 text-emerald-400" />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 transition-colors"
+                          title="Cancel"
+                        >
+                          <X className="w-4 h-4 text-red-400" />
+                        </button>
+                      </>
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-slate-400" />
+                      <button
+                        onClick={() => handleStartEdit(goal)}
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        title="Edit goal"
+                      >
+                        <Edit3 className="w-4 h-4 text-slate-400" />
+                      </button>
                     )}
-                  </button>
+                    <button
+                      onClick={() =>
+                        setExpandedGoal(isExpanded ? null : goal.id!)
+                      }
+                      className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5 text-slate-400" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-slate-400" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -295,18 +436,98 @@ export function GoalSetupStep() {
                     className="overflow-hidden"
                   >
                     <div className="px-5 pb-5 pt-0 border-t border-white/10">
-                      {/* Motivation */}
-                      <div className="mt-4 p-3 rounded-xl bg-white/5">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Heart className="w-4 h-4 text-pink-400" />
-                          <span className="text-sm font-medium text-white">
-                            Why this matters
-                          </span>
+                      {/* Edit Mode Controls */}
+                      {editingGoal === goal.id && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mt-4 space-y-4"
+                        >
+                          {/* Target Value Editor */}
+                          <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Gauge className="w-4 h-4 text-cyan-400" />
+                              <span className="text-sm font-medium text-white">
+                                Target Value
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="number"
+                                value={editedGoals[goal.id!]?.targetValue ?? goal.targetValue}
+                                onChange={(e) =>
+                                  handleEditChange(goal.id!, "targetValue", Number(e.target.value))
+                                }
+                                className="w-24 px-3 py-2 rounded-lg bg-slate-900/50 border border-slate-600 text-white text-center focus:border-cyan-500 focus:outline-none"
+                              />
+                              <span className="text-slate-400">{goal.targetUnit}</span>
+                            </div>
+                          </div>
+
+                          {/* Timeline Editor */}
+                          <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Clock className="w-4 h-4 text-purple-400" />
+                              <span className="text-sm font-medium text-white">
+                                Timeline
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {getTimelineOptions().map((option) => {
+                                const currentWeeks = editedGoals[goal.id!]?.timeline?.durationWeeks ?? goal.timeline.durationWeeks;
+                                const isSelected = currentWeeks === option.weeks;
+                                return (
+                                  <button
+                                    key={option.weeks}
+                                    onClick={() => handleTimelineChange(goal.id!, option.weeks)}
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                      isSelected
+                                        ? "bg-purple-500/30 text-purple-300 border border-purple-500/50"
+                                        : "bg-slate-700/50 text-slate-400 border border-slate-600 hover:bg-slate-700"
+                                    }`}
+                                  >
+                                    {option.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Motivation Editor */}
+                          <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                            <div className="flex items-center gap-2 mb-3">
+                              <Heart className="w-4 h-4 text-pink-400" />
+                              <span className="text-sm font-medium text-white">
+                                Why this matters to you
+                              </span>
+                            </div>
+                            <textarea
+                              value={editedGoals[goal.id!]?.motivation ?? goal.motivation}
+                              onChange={(e) =>
+                                handleEditChange(goal.id!, "motivation", e.target.value)
+                              }
+                              placeholder="What's driving you to achieve this goal?"
+                              rows={2}
+                              className="w-full px-3 py-2 rounded-lg bg-slate-900/50 border border-slate-600 text-white placeholder-slate-500 focus:border-pink-500 focus:outline-none resize-none"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* View Mode - Motivation */}
+                      {editingGoal !== goal.id && (
+                        <div className="mt-4 p-3 rounded-xl bg-white/5">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Heart className="w-4 h-4 text-pink-400" />
+                            <span className="text-sm font-medium text-white">
+                              Why this matters
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-400">
+                            {goal.motivation}
+                          </p>
                         </div>
-                        <p className="text-sm text-slate-400">
-                          {goal.motivation}
-                        </p>
-                      </div>
+                      )}
 
                       {/* Confidence Slider */}
                       {isConfirmed && (
@@ -395,12 +616,34 @@ export function GoalSetupStep() {
         </div>
       </motion.div>
 
+      {/* Error message */}
+      {error && (
+        <motion.div
+          className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <p className="text-red-400 text-sm">{error}</p>
+        </motion.div>
+      )}
+
       {/* Navigation */}
       <StepNavigation
         onBack={prevStep}
-        onNext={nextStep}
+        onNext={handleContinue}
         isNextDisabled={!canContinue}
-        nextLabel="Continue to Integrations"
+        nextLabel={isSaving ? "Saving Goals..." : "Continue to Integrations"}
+      />
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        type="goals"
+        title="Goals Saved Successfully!"
+        message={`${confirmedGoals.length} health goal${confirmedGoals.length !== 1 ? "s" : ""} have been saved. You're one step closer to your best self!`}
+        autoCloseDelay={2500}
       />
     </div>
   );

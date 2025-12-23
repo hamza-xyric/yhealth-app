@@ -64,8 +64,8 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255),
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
     date_of_birth DATE,
     gender gender,
     role user_role DEFAULT 'user',
@@ -76,8 +76,8 @@ CREATE TABLE users (
 
     -- Auth provider (local, google, apple)
     auth_provider auth_provider DEFAULT 'local',
-    -- Provider user ID (for social auth - e.g., Google sub ID)
-    provider_id VARCHAR(255),
+    -- Provider user ID (for social auth - e.g., Google sub ID or JWT token)
+    provider_id TEXT,
 
     -- Onboarding
     onboarding_status onboarding_status DEFAULT 'registered',
@@ -508,6 +508,86 @@ CREATE INDEX idx_activity_logs_user_plan_scheduled ON activity_logs(user_id, pla
 CREATE INDEX idx_activity_logs_plan_activity_scheduled ON activity_logs(plan_id, activity_id, scheduled_date);
 
 -- ============================================
+-- NOTIFICATIONS TABLE
+-- ============================================
+
+-- Notification type enum
+DROP TYPE IF EXISTS notification_type CASCADE;
+CREATE TYPE notification_type AS ENUM (
+    'achievement',      -- Achievement unlocked
+    'goal_progress',    -- Goal progress update
+    'goal_completed',   -- Goal completed
+    'streak',           -- Streak milestone
+    'reminder',         -- Activity reminder
+    'plan_update',      -- Plan update/change
+    'system',           -- System notification
+    'social',           -- Social/community notification
+    'integration',      -- Integration status update
+    'coaching',         -- AI coaching message
+    'celebration',      -- Celebration/milestone
+    'warning',          -- Warning notification
+    'tip'               -- Health tip
+);
+
+-- Notification priority enum
+DROP TYPE IF EXISTS notification_priority CASCADE;
+CREATE TYPE notification_priority AS ENUM ('low', 'normal', 'high', 'urgent');
+
+-- Notifications table
+DROP TABLE IF EXISTS notifications CASCADE;
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+    -- Notification content
+    type notification_type NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+
+    -- Rich content
+    icon VARCHAR(50),                    -- Icon name or emoji
+    image_url VARCHAR(500),              -- Optional image
+    action_url VARCHAR(500),             -- Deep link URL
+    action_label VARCHAR(100),           -- CTA button text
+
+    -- Categorization
+    category VARCHAR(50),                -- Custom category for filtering
+    priority notification_priority DEFAULT 'normal',
+
+    -- Status
+    is_read BOOLEAN DEFAULT false,
+    read_at TIMESTAMP,
+    is_archived BOOLEAN DEFAULT false,
+    archived_at TIMESTAMP,
+
+    -- Delivery
+    channels notification_channel[] DEFAULT ARRAY['push']::notification_channel[],
+    sent_via JSONB DEFAULT '{}',         -- Track which channels were used
+
+    -- Related entities
+    related_entity_type VARCHAR(50),     -- 'goal', 'plan', 'achievement', etc.
+    related_entity_id UUID,              -- ID of the related entity
+
+    -- Metadata
+    metadata JSONB DEFAULT '{}',         -- Additional data (achievement details, progress info, etc.)
+
+    -- Expiration
+    expires_at TIMESTAMP,                -- Auto-expire notification
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for notifications
+CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read, created_at DESC) WHERE is_read = false;
+CREATE INDEX idx_notifications_user_created ON notifications(user_id, created_at DESC);
+CREATE INDEX idx_notifications_user_type ON notifications(user_id, type);
+CREATE INDEX idx_notifications_user_archived ON notifications(user_id, is_archived);
+CREATE INDEX idx_notifications_user_priority ON notifications(user_id, priority, created_at DESC);
+CREATE INDEX idx_notifications_expires ON notifications(expires_at) WHERE expires_at IS NOT NULL;
+
+-- ============================================
 -- TRIGGER FOR updated_at
 -- ============================================
 
@@ -529,3 +609,4 @@ CREATE TRIGGER update_user_integrations_updated_at BEFORE UPDATE ON user_integra
 CREATE TRIGGER update_health_data_records_updated_at BEFORE UPDATE ON health_data_records FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_plans_updated_at BEFORE UPDATE ON user_plans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_activity_logs_updated_at BEFORE UPDATE ON activity_logs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_notifications_updated_at BEFORE UPDATE ON notifications FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

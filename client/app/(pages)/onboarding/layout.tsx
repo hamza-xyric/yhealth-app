@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useMemo } from "react";
 import { motion } from "framer-motion";
 
 interface OnboardingLayoutProps {
@@ -8,40 +8,34 @@ interface OnboardingLayoutProps {
 }
 
 export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
+  // Generate stable particle positions on mount
+  const particles = useMemo(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      left: `${(i * 37) % 100}%`,
+      top: `${(i * 23) % 100}%`,
+      size: i % 3 === 0 ? 2 : 1,
+      duration: 4 + (i % 5),
+      delay: (i % 7) * 0.3,
+    })),
+    []
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden relative">
+    <div className="min-h-screen bg-[#0a0a0f] overflow-hidden relative">
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {/* Primary gradient orb */}
+        {/* Primary gradient orb - Cyan/Teal */}
         <motion.div
-          className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full"
+          className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full blur-3xl"
           style={{
             background:
-              "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(139, 92, 246, 0.08) 50%, transparent 70%)",
-          }}
-          animate={{
-            scale: [1, 1.1, 1],
-            x: [0, 30, 0],
-            y: [0, -20, 0],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-
-        {/* Secondary gradient orb */}
-        <motion.div
-          className="absolute -bottom-60 -left-40 w-[800px] h-[800px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.06) 50%, transparent 70%)",
+              "radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, rgba(20, 184, 166, 0.08) 40%, transparent 70%)",
           }}
           animate={{
             scale: [1, 1.15, 1],
-            x: [0, -40, 0],
-            y: [0, 30, 0],
+            x: [0, 40, 0],
+            y: [0, -30, 0],
           }}
           transition={{
             duration: 15,
@@ -50,41 +44,63 @@ export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
           }}
         />
 
-        {/* Accent orb */}
+        {/* Secondary gradient orb - Emerald/Green */}
         <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full"
+          className="absolute -bottom-48 -left-32 w-[800px] h-[800px] rounded-full blur-3xl"
           style={{
             background:
-              "radial-gradient(circle, rgba(244, 114, 182, 0.08) 0%, transparent 60%)",
+              "radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.06) 40%, transparent 70%)",
           }}
           animate={{
             scale: [1, 1.2, 1],
-            rotate: [0, 180, 360],
+            x: [0, -50, 0],
+            y: [0, 40, 0],
           }}
           transition={{
-            duration: 20,
+            duration: 18,
             repeat: Infinity,
-            ease: "linear",
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Center accent orb - Soft glow */}
+        <motion.div
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-3xl"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 60%)",
+          }}
+          animate={{
+            scale: [1, 1.1, 1],
+            opacity: [0.5, 0.8, 0.5],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
           }}
         />
 
         {/* Floating particles */}
-        {[...Array(20)].map((_, i) => (
+        {particles.map((particle) => (
           <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white/20 rounded-full"
+            key={particle.id}
+            className="absolute rounded-full bg-cyan-400/30"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: particle.left,
+              top: particle.top,
+              width: particle.size,
+              height: particle.size,
             }}
             animate={{
-              y: [0, -30, 0],
-              opacity: [0.2, 0.5, 0.2],
+              y: [0, -40, 0],
+              opacity: [0.2, 0.6, 0.2],
+              scale: [1, 1.2, 1],
             }}
             transition={{
-              duration: 3 + Math.random() * 4,
+              duration: particle.duration,
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: particle.delay,
               ease: "easeInOut",
             }}
           />
@@ -92,13 +108,29 @@ export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
 
         {/* Grid pattern overlay */}
         <div
-          className="absolute inset-0 opacity-[0.02]"
+          className="absolute inset-0 opacity-[0.015]"
           style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-            backgroundSize: "50px 50px",
+            backgroundImage: `
+              linear-gradient(rgba(6, 182, 212, 0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(6, 182, 212, 0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: "60px 60px",
           }}
         />
+
+        {/* Radial vignette */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%)",
+          }}
+        />
+
+        {/* Top gradient fade */}
+        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#0a0a0f] to-transparent" />
+
+        {/* Bottom gradient fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0a0a0f] to-transparent" />
       </div>
 
       {/* Main Content */}

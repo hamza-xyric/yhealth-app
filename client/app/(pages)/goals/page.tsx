@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useEffect, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Target,
   Plus,
@@ -20,21 +20,44 @@ import {
   Star,
   Trophy,
   Clock,
-  BarChart3,
-  Edit3,
-  Trash2,
   MoreVertical,
   Loader2,
   AlertCircle,
   ArrowUpRight,
   Sparkles,
+  ArrowLeft,
+  X,
+  Search,
+  Play,
+  Pause,
+  RefreshCw,
+  AlertTriangle,
+  Save,
+  ChevronDown,
+  Lightbulb,
+  Quote,
+  TrendingDown,
+  Award,
+  RotateCcw,
+  PlusCircle,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api-client";
+import { MainLayout } from "@/components/layout";
 
 // Types
+interface Milestone {
+  id: string;
+  title: string;
+  targetValue: number;
+  completed: boolean;
+  completedAt?: string;
+  weekNumber: number;
+}
+
 interface Goal {
   id: string;
   category: string;
@@ -43,20 +66,16 @@ interface Goal {
   description: string;
   targetValue: number;
   targetUnit: string;
-  currentValue?: number;
+  currentValue: number;
   startDate: string;
   targetDate: string;
   durationWeeks: number;
   status: string;
   isPrimary: boolean;
   progress: number;
-  milestones?: Array<{
-    id: string;
-    title: string;
-    targetValue: number;
-    completed: boolean;
-    completedAt?: string;
-  }>;
+  motivation?: string;
+  confidenceLevel?: number;
+  milestones?: Milestone[];
 }
 
 interface Plan {
@@ -69,62 +88,612 @@ interface Plan {
   durationWeeks: number;
 }
 
-// Goal category icons and colors
+interface NewGoalData {
+  category: string;
+  pillar: string;
+  title: string;
+  description: string;
+  targetValue: number;
+  targetUnit: string;
+  currentValue: number;
+  durationWeeks: number;
+  motivation: string;
+  isPrimary: boolean;
+}
+
+// Goal category config
 const goalCategoryConfig: Record<
   string,
-  { icon: React.ReactNode; color: string; bgColor: string }
+  { icon: React.ReactNode; color: string; bgColor: string; gradient: string; label: string }
 > = {
   weight_loss: {
-    icon: <TrendingUp className="w-5 h-5" />,
+    icon: <TrendingDown className="w-5 h-5" />,
     color: "text-blue-400",
     bgColor: "from-blue-500/20 to-cyan-500/20",
+    gradient: "from-blue-500 to-cyan-500",
+    label: "Weight Loss",
   },
   muscle_building: {
     icon: <Dumbbell className="w-5 h-5" />,
     color: "text-orange-400",
     bgColor: "from-orange-500/20 to-red-500/20",
+    gradient: "from-orange-500 to-red-500",
+    label: "Build Muscle",
   },
   sleep_improvement: {
     icon: <Moon className="w-5 h-5" />,
     color: "text-indigo-400",
     bgColor: "from-indigo-500/20 to-purple-500/20",
+    gradient: "from-indigo-500 to-purple-500",
+    label: "Better Sleep",
   },
   stress_wellness: {
     icon: <Brain className="w-5 h-5" />,
     color: "text-cyan-400",
     bgColor: "from-cyan-500/20 to-teal-500/20",
+    gradient: "from-cyan-500 to-teal-500",
+    label: "Stress Management",
   },
   energy_productivity: {
     icon: <Zap className="w-5 h-5" />,
     color: "text-yellow-400",
     bgColor: "from-yellow-500/20 to-amber-500/20",
+    gradient: "from-yellow-500 to-amber-500",
+    label: "More Energy",
   },
   event_training: {
     icon: <Trophy className="w-5 h-5" />,
     color: "text-amber-400",
     bgColor: "from-amber-500/20 to-orange-500/20",
+    gradient: "from-amber-500 to-orange-500",
+    label: "Event Training",
   },
   health_condition: {
     icon: <Heart className="w-5 h-5" />,
     color: "text-rose-400",
     bgColor: "from-rose-500/20 to-pink-500/20",
+    gradient: "from-rose-500 to-pink-500",
+    label: "Health Condition",
   },
   habit_building: {
     icon: <Flame className="w-5 h-5" />,
     color: "text-emerald-400",
     bgColor: "from-emerald-500/20 to-green-500/20",
+    gradient: "from-emerald-500 to-green-500",
+    label: "Build Habits",
   },
   overall_optimization: {
     icon: <Sparkles className="w-5 h-5" />,
     color: "text-purple-400",
     bgColor: "from-purple-500/20 to-pink-500/20",
+    gradient: "from-purple-500 to-pink-500",
+    label: "Optimize Health",
+  },
+  nutrition: {
+    icon: <Utensils className="w-5 h-5" />,
+    color: "text-green-400",
+    bgColor: "from-green-500/20 to-emerald-500/20",
+    gradient: "from-green-500 to-emerald-500",
+    label: "Nutrition",
+  },
+  fitness: {
+    icon: <Dumbbell className="w-5 h-5" />,
+    color: "text-red-400",
+    bgColor: "from-red-500/20 to-orange-500/20",
+    gradient: "from-red-500 to-orange-500",
+    label: "Fitness",
   },
   custom: {
     icon: <Target className="w-5 h-5" />,
     color: "text-slate-400",
     bgColor: "from-slate-500/20 to-slate-600/20",
+    gradient: "from-slate-500 to-slate-600",
+    label: "Custom",
   },
 };
+
+// Progress Update Modal
+const ProgressModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  goal,
+  isLoading,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (value: number) => void;
+  goal: Goal | null;
+  isLoading: boolean;
+}) => {
+  const [newValue, setNewValue] = useState(0);
+
+  useEffect(() => {
+    if (goal) {
+      setNewValue(goal.currentValue || 0);
+    }
+  }, [goal]);
+
+  if (!goal) return null;
+
+  const progressDiff = newValue - (goal.currentValue || 0);
+  const newProgress = Math.min(100, Math.round((newValue / goal.targetValue) * 100));
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white">Update Progress</h3>
+                  <p className="text-sm text-slate-400">{goal.title}</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                  <p className="text-xs text-slate-400 mb-1">Current</p>
+                  <p className="text-2xl font-bold text-white">
+                    {goal.currentValue || 0} <span className="text-sm font-normal text-slate-500">{goal.targetUnit}</span>
+                  </p>
+                </div>
+                <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
+                  <p className="text-xs text-cyan-300 mb-1">Target</p>
+                  <p className="text-2xl font-bold text-white">
+                    {goal.targetValue} <span className="text-sm font-normal text-slate-500">{goal.targetUnit}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  New Value ({goal.targetUnit})
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={newValue}
+                    onChange={(e) => setNewValue(Number(e.target.value))}
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-lg font-medium focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+                  />
+                  {progressDiff !== 0 && (
+                    <div className={`absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 ${progressDiff > 0 ? "text-green-400" : "text-red-400"}`}>
+                      {progressDiff > 0 ? <ArrowUpRight className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                      <span className="text-sm font-medium">{Math.abs(progressDiff)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-slate-400">New Progress</span>
+                  <span className="text-sm font-medium text-white">{newProgress}%</span>
+                </div>
+                <div className="h-3 rounded-full bg-white/10 overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                    initial={{ width: `${goal.progress}%` }}
+                    animate={{ width: `${newProgress}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+              </div>
+
+              {goal.milestones && goal.milestones.length > 0 && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Award className="w-4 h-4 text-amber-400" />
+                    <span className="text-sm font-medium text-amber-300">Milestones</span>
+                  </div>
+                  <div className="space-y-2">
+                    {goal.milestones.slice(0, 3).map((m, index) => (
+                      <div key={m.id || `milestone-${index}`} className="flex items-center gap-2">
+                        {m.completed || newValue >= m.targetValue ? (
+                          <CheckCircle2 className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <Circle className="w-4 h-4 text-slate-500" />
+                        )}
+                        <span className={`text-sm ${m.completed || newValue >= m.targetValue ? "text-green-300" : "text-slate-400"}`}>
+                          {m.title} ({m.targetValue} {goal.targetUnit})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={onClose}
+                disabled={isLoading}
+                className="flex-1 px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => onSave(newValue)}
+                disabled={isLoading}
+                className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="w-5 h-5" />
+                    Save Progress
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// Create Goal Modal
+const CreateGoalModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  isLoading,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (data: NewGoalData) => void;
+  isLoading: boolean;
+}) => {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState<NewGoalData>({
+    category: "",
+    pillar: "fitness",
+    title: "",
+    description: "",
+    targetValue: 0,
+    targetUnit: "",
+    currentValue: 0,
+    durationWeeks: 12,
+    motivation: "",
+    isPrimary: false,
+  });
+
+  const categories = Object.entries(goalCategoryConfig).filter(([key]) => key !== "custom");
+
+  const handleCategorySelect = (category: string) => {
+    let pillar = "fitness";
+    if (["nutrition", "weight_loss"].includes(category)) pillar = "nutrition";
+    if (["sleep_improvement", "stress_wellness", "overall_optimization"].includes(category)) pillar = "wellbeing";
+
+    setFormData({ ...formData, category, pillar });
+    setStep(2);
+  };
+
+  const isValid = () => {
+    return (
+      formData.category &&
+      formData.title.length >= 5 &&
+      formData.description.length >= 10 &&
+      formData.targetValue > 0 &&
+      formData.targetUnit &&
+      formData.motivation.length >= 10
+    );
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="bg-slate-900 border border-white/10 rounded-2xl p-4 sm:p-6 max-w-2xl w-full shadow-2xl my-8 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                  <PlusCircle className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-semibold text-white">Create New Goal</h3>
+                  <p className="text-sm text-slate-400">Step {step} of 2</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="flex gap-2 mb-6">
+              {[1, 2].map((s) => (
+                <div
+                  key={s}
+                  className={`h-1.5 flex-1 rounded-full transition-colors ${
+                    s <= step ? "bg-gradient-to-r from-cyan-500 to-blue-500" : "bg-white/10"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {step === 1 && (
+              <div className="space-y-4">
+                <p className="text-slate-300 mb-4">What type of goal would you like to set?</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                  {categories.map(([key, config]) => (
+                    <motion.button
+                      key={key}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleCategorySelect(key)}
+                      className={`p-3 sm:p-4 rounded-xl border transition-all cursor-pointer text-left ${
+                        formData.category === key
+                          ? `bg-gradient-to-br ${config.bgColor} border-white/20`
+                          : "bg-white/5 border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${config.bgColor.replace("from-", "bg-").split(" ")[0]} flex items-center justify-center ${config.color} mb-2`}>
+                        {config.icon}
+                      </div>
+                      <p className="font-medium text-white text-xs sm:text-sm">{config.label}</p>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-4">
+                <button
+                  onClick={() => setStep(1)}
+                  className="flex items-center gap-1 text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to categories
+                </button>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Goal Title <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g., Lose 10 lbs in 12 weeks"
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Description <span className="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={2}
+                    placeholder="Describe your goal in detail..."
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Current</label>
+                    <input
+                      type="number"
+                      value={formData.currentValue}
+                      onChange={(e) => setFormData({ ...formData, currentValue: Number(e.target.value) })}
+                      className="w-full px-3 sm:px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-cyan-500/50 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Target *</label>
+                    <input
+                      type="number"
+                      value={formData.targetValue}
+                      onChange={(e) => setFormData({ ...formData, targetValue: Number(e.target.value) })}
+                      className="w-full px-3 sm:px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-cyan-500/50 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Unit *</label>
+                    <input
+                      type="text"
+                      value={formData.targetUnit}
+                      onChange={(e) => setFormData({ ...formData, targetUnit: e.target.value })}
+                      placeholder="lbs"
+                      className="w-full px-3 sm:px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Weeks</label>
+                    <select
+                      value={formData.durationWeeks}
+                      onChange={(e) => setFormData({ ...formData, durationWeeks: Number(e.target.value) })}
+                      className="w-full px-3 sm:px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-cyan-500/50 transition-all cursor-pointer"
+                    >
+                      {[4, 8, 12, 16, 24, 52].map((w) => (
+                        <option key={w} value={w} className="bg-slate-900">{w}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <div className="flex items-center gap-2">
+                      <Quote className="w-4 h-4 text-amber-400" />
+                      Why does this goal matter? <span className="text-red-400">*</span>
+                    </div>
+                  </label>
+                  <textarea
+                    value={formData.motivation}
+                    onChange={(e) => setFormData({ ...formData, motivation: e.target.value })}
+                    rows={2}
+                    placeholder="This helps keep you motivated..."
+                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all resize-none"
+                  />
+                </div>
+
+                <label className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPrimary}
+                    onChange={(e) => setFormData({ ...formData, isPrimary: e.target.checked })}
+                    className="w-5 h-5 rounded border-white/20 bg-white/5 text-cyan-500 focus:ring-cyan-500/50"
+                  />
+                  <div>
+                    <p className="font-medium text-white flex items-center gap-2">
+                      <Star className="w-4 h-4 text-amber-400" />
+                      Set as Primary Goal
+                    </p>
+                    <p className="text-sm text-slate-400">This will be your main focus</p>
+                  </div>
+                </label>
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
+              <button
+                onClick={onClose}
+                disabled={isLoading}
+                className="flex-1 px-4 py-3 rounded-xl bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              {step === 2 && (
+                <button
+                  onClick={() => onSave(formData)}
+                  disabled={isLoading || !isValid()}
+                  className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Plus className="w-5 h-5" />
+                      Create Goal
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// Confirmation Modal
+const ConfirmModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText = "Delete",
+  isLoading = false,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText?: string;
+  isLoading?: boolean;
+}) => (
+  <AnimatePresence>
+    {isOpen && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          className="bg-slate-900 border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-red-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">{title}</h3>
+              <p className="text-sm text-slate-400">{message}</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isLoading}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              {confirmText}
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 
 export default function GoalsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -134,18 +703,25 @@ export default function GoalsPage() {
   const [error, setError] = useState<string | null>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [activeTab, setActiveTab] = useState<"active" | "completed" | "all">(
-    "active"
-  );
+  const [filter, setFilter] = useState<"all" | "active" | "completed" | "paused">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedGoal, setExpandedGoal] = useState<string | null>(null);
+  const [actionMenu, setActionMenu] = useState<string | null>(null);
 
-  // Redirect if not authenticated
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push("/auth/signin?callbackUrl=/goals");
     }
   }, [isAuthenticated, authLoading, router]);
 
-  // Fetch goals data
   const fetchGoals = useCallback(async () => {
     if (!isAuthenticated) return;
 
@@ -153,16 +729,14 @@ export default function GoalsPage() {
     setError(null);
 
     try {
-      // Fetch goals from assessment endpoint
-      const goalsResponse = await api.get<{ goals: Goal[] }>(
-        "/assessment/goals"
-      );
+      const [goalsResponse, plansResponse] = await Promise.all([
+        api.get<{ goals: Goal[] }>("/assessment/goals"),
+        api.get<{ plans: Plan[] }>("/plans"),
+      ]);
+
       if (goalsResponse.success && goalsResponse.data) {
         setGoals(goalsResponse.data.goals || []);
       }
-
-      // Fetch plans
-      const plansResponse = await api.get<{ plans: Plan[] }>("/plans");
       if (plansResponse.success && plansResponse.data) {
         setPlans(plansResponse.data.plans || []);
       }
@@ -185,26 +759,120 @@ export default function GoalsPage() {
     }
   }, [isAuthenticated, fetchGoals]);
 
-  // Filter goals based on active tab
-  const filteredGoals = goals.filter((goal) => {
-    if (activeTab === "active") return goal.status === "active";
-    if (activeTab === "completed") return goal.status === "completed";
-    return true;
-  });
+  const filteredGoals = useMemo(() => {
+    return goals.filter((goal) => {
+      const matchesFilter = filter === "all" || goal.status === filter;
+      const matchesSearch =
+        !searchQuery ||
+        goal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        goal.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+  }, [goals, filter, searchQuery]);
 
-  // Get plan for a goal
-  const getPlanForGoal = (goalId: string) =>
-    plans.find((p) => p.goalId === goalId);
-
-  // Calculate overall stats
-  const stats = {
+  const stats = useMemo(() => ({
     total: goals.length,
     active: goals.filter((g) => g.status === "active").length,
     completed: goals.filter((g) => g.status === "completed").length,
-    avgProgress: Math.round(
-      goals.reduce((acc, g) => acc + (g.progress || 0), 0) / (goals.length || 1)
-    ),
+    paused: goals.filter((g) => g.status === "paused").length,
+    avgProgress: goals.length > 0
+      ? Math.round(goals.reduce((sum, g) => sum + g.progress, 0) / goals.length)
+      : 0,
+    primaryGoal: goals.find((g) => g.isPrimary),
+  }), [goals]);
+
+  const handleCreateGoal = async (data: NewGoalData) => {
+    setIsCreating(true);
+    try {
+      const startDate = new Date();
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + data.durationWeeks * 7);
+
+      await api.post("/assessment/goals", {
+        category: data.category,
+        pillar: data.pillar,
+        isPrimary: data.isPrimary,
+        title: data.title,
+        description: data.description,
+        targetValue: data.targetValue,
+        targetUnit: data.targetUnit,
+        currentValue: data.currentValue,
+        timeline: {
+          startDate: startDate.toISOString(),
+          targetDate: targetDate.toISOString(),
+          durationWeeks: data.durationWeeks,
+        },
+        motivation: data.motivation,
+      });
+
+      await fetchGoals();
+      setIsCreateModalOpen(false);
+    } catch (err) {
+      console.error("Failed to create goal:", err);
+    } finally {
+      setIsCreating(false);
+    }
   };
+
+  const handleUpdateProgress = async (newValue: number) => {
+    if (!selectedGoal) return;
+
+    setIsUpdating(true);
+    try {
+      await api.patch(`/assessment/goals/${selectedGoal.id}`, {
+        currentValue: newValue,
+      });
+
+      setGoals((prev) =>
+        prev.map((g) =>
+          g.id === selectedGoal.id
+            ? {
+                ...g,
+                currentValue: newValue,
+                progress: Math.min(100, Math.round((newValue / g.targetValue) * 100)),
+              }
+            : g
+        )
+      );
+
+      setIsProgressModalOpen(false);
+      setSelectedGoal(null);
+    } catch (err) {
+      console.error("Failed to update progress:", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStatusChange = async (goal: Goal, newStatus: string) => {
+    setActionMenu(null);
+    try {
+      await api.patch(`/assessment/goals/${goal.id}`, { status: newStatus });
+      setGoals((prev) =>
+        prev.map((g) => (g.id === goal.id ? { ...g, status: newStatus } : g))
+      );
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedGoal) return;
+
+    setIsDeleting(true);
+    try {
+      await api.delete(`/assessment/goals/${selectedGoal.id}`);
+      setGoals((prev) => prev.filter((g) => g.id !== selectedGoal.id));
+      setIsDeleteModalOpen(false);
+      setSelectedGoal(null);
+    } catch (err) {
+      console.error("Failed to delete goal:", err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const getPlanForGoal = (goalId: string) => plans.find((p) => p.goalId === goalId);
 
   if (authLoading || isLoading) {
     return (
@@ -214,10 +882,8 @@ export default function GoalsPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col items-center gap-4"
         >
-          <div className="relative">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 text-white animate-spin" />
-            </div>
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
           <p className="text-slate-400">Loading your goals...</p>
         </motion.div>
@@ -236,14 +902,13 @@ export default function GoalsPage() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-red-500/20 flex items-center justify-center">
             <AlertCircle className="w-10 h-10 text-red-400" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-3">
-            Something went wrong
-          </h1>
+          <h1 className="text-2xl font-bold text-white mb-3">Something went wrong</h1>
           <p className="text-slate-400 mb-8">{error}</p>
           <button
             onClick={fetchGoals}
-            className="px-6 py-3 bg-slate-800 text-white font-medium rounded-xl hover:bg-slate-700 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 text-white font-medium rounded-xl hover:bg-slate-700 transition-colors cursor-pointer"
           >
+            <RotateCcw className="w-5 h-5" />
             Try Again
           </button>
         </motion.div>
@@ -252,382 +917,529 @@ export default function GoalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
-      </div>
+    <MainLayout>
+      <div className="min-h-screen bg-slate-950">
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
+        </div>
 
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                My{" "}
-                <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                  Goals
-                </span>
-              </h1>
-              <p className="text-slate-400 mt-1">
-                Track and manage your health objectives
-              </p>
-            </div>
-
-            <Link
-              href="/onboarding"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium rounded-xl hover:opacity-90 transition-opacity"
-            >
-              <Plus className="w-5 h-5" />
-              New Goal
-            </Link>
-          </div>
-        </motion.header>
-
-        {/* Stats Overview */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
-        >
-          <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 rounded-lg bg-cyan-500/20">
-                <Target className="w-5 h-5 text-cyan-400" />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-white">{stats.total}</p>
-            <p className="text-sm text-slate-400">Total Goals</p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 rounded-lg bg-emerald-500/20">
-                <Flame className="w-5 h-5 text-emerald-400" />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-white">{stats.active}</p>
-            <p className="text-sm text-slate-400">Active</p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 rounded-lg bg-purple-500/20">
-                <CheckCircle2 className="w-5 h-5 text-purple-400" />
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-white">{stats.completed}</p>
-            <p className="text-sm text-slate-400">Completed</p>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/10 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2 rounded-lg bg-blue-500/20">
-                <BarChart3 className="w-5 h-5 text-blue-400" />
-              </div>
-              <div className="flex items-center gap-1 text-emerald-400 text-xs">
-                <ArrowUpRight className="w-3 h-3" />
-                +5%
-              </div>
-            </div>
-            <p className="text-3xl font-bold text-white">{stats.avgProgress}%</p>
-            <p className="text-sm text-slate-400">Avg Progress</p>
-          </div>
-        </motion.div>
-
-        {/* Tabs */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex gap-2 mb-6 p-1 bg-white/5 rounded-xl w-fit"
-        >
-          {[
-            { id: "active", label: "Active" },
-            { id: "completed", label: "Completed" },
-            { id: "all", label: "All" },
-          ].map((tab) => (
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mb-4"
+          >
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.id
-                  ? "bg-white/10 text-white"
-                  : "text-slate-400 hover:text-white"
-              }`}
+              onClick={() => router.back()}
+              className="group flex items-center gap-2 text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
-              {tab.label}
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+              <span className="text-sm">Back</span>
             </button>
-          ))}
-        </motion.div>
+          </motion.div>
 
-        {/* Goals List */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="space-y-4"
-        >
-          {filteredGoals.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-slate-800 flex items-center justify-center">
-                <Target className="w-10 h-10 text-slate-600" />
+          <motion.header
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 sm:mb-8"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                  My{" "}
+                  <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                    Goals
+                  </span>
+                </h1>
+                <p className="text-slate-400 mt-1">Track and manage your health objectives</p>
               </div>
-              <h2 className="text-xl font-semibold text-white mb-2">
-                No goals yet
-              </h2>
-              <p className="text-slate-400 mb-6 max-w-md mx-auto">
-                {activeTab === "active"
-                  ? "You don't have any active goals. Start your health journey by creating one!"
-                  : activeTab === "completed"
-                  ? "You haven't completed any goals yet. Keep working on your active goals!"
-                  : "Create your first goal to start tracking your health progress."}
-              </p>
-              <Link
-                href="/onboarding"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium rounded-xl hover:opacity-90 transition-opacity"
+
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-cyan-500/25 cursor-pointer"
               >
                 <Plus className="w-5 h-5" />
-                Create Goal
-              </Link>
+                <span className="hidden sm:inline">New Goal</span>
+                <span className="sm:hidden">Add</span>
+              </button>
             </div>
-          ) : (
-            filteredGoals.map((goal, index) => {
-              const config = goalCategoryConfig[goal.category] ||
-                goalCategoryConfig.custom;
-              const plan = getPlanForGoal(goal.id);
-              const daysRemaining = Math.ceil(
-                (new Date(goal.targetDate).getTime() - Date.now()) /
-                  (1000 * 60 * 60 * 24)
-              );
+          </motion.header>
 
-              return (
-                <motion.div
-                  key={goal.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  className="group"
-                >
-                  <div
-                    className={`p-6 rounded-2xl bg-gradient-to-br ${config.bgColor} border border-white/10 backdrop-blur-sm hover:border-white/20 transition-all`}
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-                      {/* Goal Icon & Info */}
-                      <div className="flex items-start gap-4 flex-1">
-                        <div
-                          className={`w-14 h-14 rounded-xl bg-white/10 flex items-center justify-center ${config.color}`}
-                        >
-                          {config.icon}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold text-white truncate">
-                              {goal.title}
-                            </h3>
-                            {goal.isPrimary && (
-                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400">
-                                Primary
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-slate-400 line-clamp-1 mb-3">
-                            {goal.description}
-                          </p>
-
-                          {/* Target & Timeline */}
-                          <div className="flex flex-wrap items-center gap-4 text-sm">
-                            <div className="flex items-center gap-1.5 text-slate-300">
-                              <Target className="w-4 h-4 text-slate-500" />
-                              <span>
-                                {goal.targetValue} {goal.targetUnit}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-slate-300">
-                              <Calendar className="w-4 h-4 text-slate-500" />
-                              <span>{goal.durationWeeks} weeks</span>
-                            </div>
-                            <div
-                              className={`flex items-center gap-1.5 ${
-                                daysRemaining < 7
-                                  ? "text-amber-400"
-                                  : "text-slate-300"
-                              }`}
-                            >
-                              <Clock className="w-4 h-4" />
-                              <span>
-                                {daysRemaining > 0
-                                  ? `${daysRemaining} days left`
-                                  : "Overdue"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Progress */}
-                      <div className="lg:w-48">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-slate-400">
-                            Progress
-                          </span>
-                          <span className="text-sm font-semibold text-white">
-                            {goal.progress || 0}%
-                          </span>
-                        </div>
-                        <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                          <motion.div
-                            className={`h-full rounded-full bg-gradient-to-r ${
-                              goal.status === "completed"
-                                ? "from-green-500 to-emerald-500"
-                                : "from-cyan-500 to-blue-500"
-                            }`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${goal.progress || 0}%` }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                          />
-                        </div>
-
-                        {/* Plan Link */}
-                        {plan && (
-                          <Link
-                            href={`/plans/${plan.id}`}
-                            className="mt-3 flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300"
-                          >
-                            View Plan
-                            <ChevronRight className="w-3 h-3" />
-                          </Link>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        {goal.status === "completed" ? (
-                          <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                            <CheckCircle2 className="w-5 h-5 text-green-400" />
-                          </div>
-                        ) : (
-                          <>
-                            <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100">
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100">
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Milestones */}
-                    {goal.milestones && goal.milestones.length > 0 && (
-                      <div className="mt-6 pt-4 border-t border-white/10">
-                        <h4 className="text-sm font-medium text-slate-300 mb-3">
-                          Milestones
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {goal.milestones.map((milestone) => (
-                            <div
-                              key={milestone.id}
-                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs ${
-                                milestone.completed
-                                  ? "bg-green-500/20 text-green-400"
-                                  : "bg-white/5 text-slate-400"
-                              }`}
-                            >
-                              {milestone.completed ? (
-                                <CheckCircle2 className="w-3 h-3" />
-                              ) : (
-                                <Circle className="w-3 h-3" />
-                              )}
-                              {milestone.title}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })
-          )}
-        </motion.div>
-
-        {/* Achievement Section */}
-        {stats.completed > 0 && (
+          {/* Stats */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-12"
+            transition={{ delay: 0.1 }}
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8"
           >
-            <div className="flex items-center gap-2 mb-6">
-              <Trophy className="w-5 h-5 text-amber-400" />
-              <h2 className="text-lg font-semibold text-white">Achievements</h2>
+            {[
+              { label: "Total", value: stats.total, icon: Target, color: "cyan", bg: "from-cyan-500/10 to-blue-500/10" },
+              { label: "Active", value: stats.active, icon: Zap, color: "green", bg: "from-green-500/10 to-emerald-500/10" },
+              { label: "Completed", value: stats.completed, icon: CheckCircle2, color: "blue", bg: "from-blue-500/10 to-indigo-500/10" },
+              { label: "Paused", value: stats.paused, icon: Pause, color: "yellow", bg: "from-yellow-500/10 to-amber-500/10" },
+              { label: "Progress", value: `${stats.avgProgress}%`, icon: TrendingUp, color: "purple", bg: "from-purple-500/10 to-violet-500/10" },
+            ].map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 * index }}
+                className={`p-4 sm:p-5 rounded-2xl bg-gradient-to-br ${stat.bg} border border-white/10 hover:border-white/20 transition-all`}
+              >
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <div className={`p-2 rounded-lg bg-${stat.color}-500/20`}>
+                    <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 text-${stat.color}-400`} />
+                  </div>
+                </div>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</p>
+                <p className="text-xs sm:text-sm text-slate-400">{stat.label}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Primary Goal */}
+          {stats.primaryGoal && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="mb-6 sm:mb-8"
+            >
+              <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-red-500/10 border border-amber-500/20">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                      <Star className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-medium text-amber-400 uppercase tracking-wide">Primary Goal</span>
+                      <h3 className="text-base sm:text-lg font-semibold text-white truncate">{stats.primaryGoal.title}</h3>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-2xl sm:text-3xl font-bold text-white">{stats.primaryGoal.progress}%</p>
+                      <p className="text-xs text-slate-400">Complete</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedGoal(stats.primaryGoal!);
+                        setIsProgressModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-amber-500/20 text-amber-300 rounded-lg hover:bg-amber-500/30 transition-colors text-sm font-medium cursor-pointer"
+                    >
+                      Update
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${stats.primaryGoal.progress}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Search & Filter */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6"
+          >
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search goals..."
+                className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+              />
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                {
-                  icon: <Star className="w-6 h-6" />,
-                  title: "First Goal",
-                  desc: "Completed your first goal",
-                  unlocked: true,
-                },
-                {
-                  icon: <Flame className="w-6 h-6" />,
-                  title: "On Fire",
-                  desc: "7 day streak",
-                  unlocked: true,
-                },
-                {
-                  icon: <Trophy className="w-6 h-6" />,
-                  title: "Goal Crusher",
-                  desc: "Complete 5 goals",
-                  unlocked: stats.completed >= 5,
-                },
-                {
-                  icon: <Zap className="w-6 h-6" />,
-                  title: "Consistent",
-                  desc: "30 day streak",
-                  unlocked: false,
-                },
-              ].map((achievement, i) => (
-                <div
-                  key={i}
-                  className={`p-4 rounded-xl border ${
-                    achievement.unlocked
-                      ? "bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/30"
-                      : "bg-white/5 border-white/10 opacity-50"
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/10 overflow-x-auto">
+              {(["all", "active", "completed", "paused"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
+                    filter === f
+                      ? "bg-cyan-500 text-white shadow-lg shadow-cyan-500/25"
+                      : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  <div
-                    className={`w-12 h-12 rounded-xl mb-3 flex items-center justify-center ${
-                      achievement.unlocked
-                        ? "bg-amber-500/20 text-amber-400"
-                        : "bg-slate-800 text-slate-600"
-                    }`}
-                  >
-                    {achievement.icon}
-                  </div>
-                  <h3 className="font-medium text-white mb-1">
-                    {achievement.title}
-                  </h3>
-                  <p className="text-xs text-slate-400">{achievement.desc}</p>
-                </div>
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
               ))}
             </div>
           </motion.div>
+
+          {/* Goals List */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="space-y-4"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredGoals.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-16 rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-white/5"
+                >
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-slate-800 flex items-center justify-center">
+                    <Target className="w-10 h-10 text-slate-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    {filter === "all" ? "No Goals Yet" : `No ${filter} goals`}
+                  </h3>
+                  <p className="text-slate-400 mb-6 max-w-md mx-auto px-4">
+                    {filter === "all"
+                      ? "Start your health journey by creating your first goal."
+                      : `You don't have any ${filter} goals at the moment.`}
+                  </p>
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-cyan-500/25 cursor-pointer"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Create Goal
+                  </button>
+                </motion.div>
+              ) : (
+                filteredGoals.map((goal, index) => {
+                  const config = goalCategoryConfig[goal.category] || goalCategoryConfig.custom;
+                  const plan = getPlanForGoal(goal.id);
+                  const daysRemaining = Math.ceil(
+                    (new Date(goal.targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                  );
+                  const isExpanded = expandedGoal === goal.id;
+
+                  return (
+                    <motion.div
+                      key={goal.id}
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ delay: index * 0.03 }}
+                      className="group"
+                    >
+                      <div
+                        className={`p-4 sm:p-6 rounded-2xl bg-gradient-to-br ${config.bgColor} border border-white/10 backdrop-blur-sm hover:border-white/20 transition-all`}
+                      >
+                        <div className="flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-6">
+                          <div className="flex items-start gap-4 flex-1 min-w-0">
+                            <div
+                              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white/10 flex items-center justify-center ${config.color} shrink-0`}
+                            >
+                              {config.icon}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <h3 className="text-base sm:text-lg font-semibold text-white truncate">
+                                  {goal.title}
+                                </h3>
+                                {goal.isPrimary && (
+                                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 flex items-center gap-1">
+                                    <Star className="w-3 h-3" />
+                                    Primary
+                                  </span>
+                                )}
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    goal.status === "active"
+                                      ? "bg-green-500/20 text-green-400"
+                                      : goal.status === "completed"
+                                      ? "bg-blue-500/20 text-blue-400"
+                                      : goal.status === "paused"
+                                      ? "bg-yellow-500/20 text-yellow-400"
+                                      : "bg-slate-500/20 text-slate-400"
+                                  }`}
+                                >
+                                  {goal.status}
+                                </span>
+                              </div>
+                              <p className="text-sm text-slate-400 line-clamp-2 sm:line-clamp-1 mb-3">
+                                {goal.description}
+                              </p>
+
+                              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+                                <div className="flex items-center gap-1.5 text-slate-300">
+                                  <Target className="w-4 h-4 text-slate-500" />
+                                  <span>{goal.currentValue || 0}/{goal.targetValue} {goal.targetUnit}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-slate-300">
+                                  <Calendar className="w-4 h-4 text-slate-500" />
+                                  <span>{goal.durationWeeks}w</span>
+                                </div>
+                                <div
+                                  className={`flex items-center gap-1.5 ${
+                                    daysRemaining < 7 && daysRemaining > 0
+                                      ? "text-amber-400"
+                                      : daysRemaining <= 0
+                                      ? "text-red-400"
+                                      : "text-slate-300"
+                                  }`}
+                                >
+                                  <Clock className="w-4 h-4" />
+                                  <span>
+                                    {daysRemaining > 0 ? `${daysRemaining}d left` : "Overdue"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-4 lg:w-52">
+                            <div className="flex-1 lg:w-full">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-slate-400">Progress</span>
+                                <span className="text-sm font-semibold text-white">{goal.progress}%</span>
+                              </div>
+                              <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                                <motion.div
+                                  className={`h-full rounded-full bg-gradient-to-r ${
+                                    goal.status === "completed"
+                                      ? "from-green-500 to-emerald-500"
+                                      : config.gradient
+                                  }`}
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${goal.progress}%` }}
+                                  transition={{ duration: 1, ease: "easeOut" }}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {goal.status === "active" && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedGoal(goal);
+                                    setIsProgressModalOpen(true);
+                                  }}
+                                  className="px-3 py-2 bg-cyan-500/20 text-cyan-300 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm font-medium cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <TrendingUp className="w-4 h-4" />
+                                  <span className="hidden sm:inline">Update</span>
+                                </button>
+                              )}
+
+                              <div className="relative">
+                                <button
+                                  onClick={() => setActionMenu(actionMenu === goal.id ? null : goal.id)}
+                                  className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+
+                                <AnimatePresence>
+                                  {actionMenu === goal.id && (
+                                    <motion.div
+                                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                      className="absolute right-0 top-full mt-1 w-48 py-1 rounded-xl bg-slate-800 border border-white/10 shadow-xl z-10"
+                                    >
+                                      {goal.status === "active" && (
+                                        <>
+                                          <button
+                                            onClick={() => handleStatusChange(goal, "paused")}
+                                            className="w-full px-4 py-2 text-left text-sm text-yellow-400 hover:bg-yellow-500/10 transition-colors flex items-center gap-2 cursor-pointer"
+                                          >
+                                            <Pause className="w-4 h-4" />
+                                            Pause
+                                          </button>
+                                          <button
+                                            onClick={() => handleStatusChange(goal, "completed")}
+                                            className="w-full px-4 py-2 text-left text-sm text-green-400 hover:bg-green-500/10 transition-colors flex items-center gap-2 cursor-pointer"
+                                          >
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            Complete
+                                          </button>
+                                        </>
+                                      )}
+
+                                      {goal.status === "paused" && (
+                                        <button
+                                          onClick={() => handleStatusChange(goal, "active")}
+                                          className="w-full px-4 py-2 text-left text-sm text-green-400 hover:bg-green-500/10 transition-colors flex items-center gap-2 cursor-pointer"
+                                        >
+                                          <Play className="w-4 h-4" />
+                                          Resume
+                                        </button>
+                                      )}
+
+                                      {(goal.status === "completed" || goal.status === "abandoned") && (
+                                        <button
+                                          onClick={() => handleStatusChange(goal, "active")}
+                                          className="w-full px-4 py-2 text-left text-sm text-cyan-400 hover:bg-cyan-500/10 transition-colors flex items-center gap-2 cursor-pointer"
+                                        >
+                                          <RefreshCw className="w-4 h-4" />
+                                          Reactivate
+                                        </button>
+                                      )}
+
+                                      <div className="my-1 border-t border-white/10" />
+
+                                      <button
+                                        onClick={() => setExpandedGoal(isExpanded ? null : goal.id)}
+                                        className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-white/5 transition-colors flex items-center gap-2 cursor-pointer"
+                                      >
+                                        <ChevronDown className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                        {isExpanded ? "Less" : "More"}
+                                      </button>
+
+                                      <button
+                                        onClick={() => {
+                                          setSelectedGoal(goal);
+                                          setIsDeleteModalOpen(true);
+                                          setActionMenu(null);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 cursor-pointer"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete
+                                      </button>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+
+                              {plan && (
+                                <Link
+                                  href={`/plans/${plan.id}`}
+                                  className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                                >
+                                  <ChevronRight className="w-4 h-4" />
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-6 pt-6 border-t border-white/10 grid sm:grid-cols-2 gap-4 sm:gap-6">
+                                {goal.motivation && (
+                                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Quote className="w-4 h-4 text-amber-400" />
+                                      <span className="text-sm font-medium text-slate-300">Why It Matters</span>
+                                    </div>
+                                    <p className="text-sm text-slate-400 italic">"{goal.motivation}"</p>
+                                  </div>
+                                )}
+
+                                {goal.milestones && goal.milestones.length > 0 && (
+                                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <Award className="w-4 h-4 text-cyan-400" />
+                                      <span className="text-sm font-medium text-slate-300">Milestones</span>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {goal.milestones.map((m, index) => (
+                                        <div key={m.id || `milestone-${index}`} className="flex items-center gap-2">
+                                          {m.completed ? (
+                                            <CheckCircle2 className="w-4 h-4 text-green-400" />
+                                          ) : (
+                                            <Circle className="w-4 h-4 text-slate-500" />
+                                          )}
+                                          <span className={`text-sm ${m.completed ? "text-green-300 line-through" : "text-slate-400"}`}>
+                                            {m.title}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {goals.length > 0 && goals.length < 3 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mt-8 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20"
+            >
+              <div className="flex items-start gap-4">
+                <div className="p-2 rounded-lg bg-cyan-500/20 shrink-0">
+                  <Lightbulb className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white mb-1">Pro Tip</h3>
+                  <p className="text-sm text-slate-400">
+                    Having 2-3 goals across different pillars leads to better success. Consider adding goals in fitness, nutrition, or wellbeing!
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        <CreateGoalModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSave={handleCreateGoal}
+          isLoading={isCreating}
+        />
+
+        <ProgressModal
+          isOpen={isProgressModalOpen}
+          onClose={() => {
+            setIsProgressModalOpen(false);
+            setSelectedGoal(null);
+          }}
+          onSave={handleUpdateProgress}
+          goal={selectedGoal}
+          isLoading={isUpdating}
+        />
+
+        <ConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setSelectedGoal(null);
+          }}
+          onConfirm={handleDelete}
+          title="Delete Goal"
+          message={`Delete "${selectedGoal?.title}"? This cannot be undone.`}
+          isLoading={isDeleting}
+        />
+
+        {actionMenu && (
+          <div className="fixed inset-0 z-0" onClick={() => setActionMenu(null)} />
         )}
       </div>
-    </div>
+    </MainLayout>
   );
 }

@@ -19,7 +19,9 @@
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "test:unit": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/unit",
     "test:integration": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/integration",
-    "test:ci": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --ci --coverage --runInBand"
+    "test:ci": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --ci --coverage --runInBand",
+    "db:setup": "tsx src/database/setup.ts",
+    "db:seed:questions": "tsx src/database/seed-assessment-questions.ts"
   },
   "keywords": [
     "health",

@@ -126,8 +126,14 @@ export const updateGoalSchema = z.object({
   status: z.enum(['active', 'paused', 'completed', 'abandoned']).optional(),
 });
 
+// Delete goals schema (bulk delete)
+export const deleteGoalsSchema = z.object({
+  goalIds: z.array(z.string().uuid()).min(1, 'At least one goal ID is required'),
+});
+
 // Types
 export type GoalDiscoveryInput = z.infer<typeof goalDiscoverySchema>;
+export type DeleteGoalsInput = z.infer<typeof deleteGoalsSchema>;
 export type AssessmentModeInput = z.infer<typeof assessmentModeSchema>;
 export type QuickAssessmentResponseInput = z.infer<typeof quickAssessmentResponseSchema>;
 export type SubmitQuickAssessmentInput = z.infer<typeof submitQuickAssessmentSchema>;

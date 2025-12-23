@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Notification channels
-const notificationChannelEnum = z.enum(['push', 'email', 'whatsapp', 'sms']);
+const notificationChannelEnum = z.enum(['push', 'email', 'whatsapp', 'sms', 'both']);
 
 // Coaching styles
 const coachingStyleEnum = z.enum(['supportive', 'direct', 'analytical', 'motivational']);
@@ -18,10 +18,10 @@ export const notificationPreferencesSchema = z.object({
     sms: z.boolean().default(false),
   }).optional(),
   quietHours: z.object({
-    enabled: z.boolean().default(true),
-    startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid time format (use HH:mm)'),
-    endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid time format (use HH:mm)'),
-    timezone: z.string().default('UTC'),
+    enabled: z.boolean().optional(),
+    start: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid time format (use HH:mm)').optional(),
+    end: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid time format (use HH:mm)').optional(),
+    timezone: z.string().optional(),
   }).optional(),
   frequency: z.object({
     maxPerDay: z.number().int().min(1).max(50).default(10),
@@ -34,7 +34,7 @@ export const coachingPreferencesSchema = z.object({
   style: coachingStyleEnum.default('supportive'),
   intensity: coachingIntensityEnum.default('moderate'),
   preferredChannel: notificationChannelEnum.default('push'),
-  checkInFrequency: z.enum(['daily', 'every_other_day', 'weekly']).default('daily'),
+  checkInFrequency: z.enum(['daily', 'twice_daily', 'every_other_day', 'weekly']).default('daily'),
   preferredCheckInTime: z.string()
     .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Invalid time format (use HH:mm)')
     .default('09:00'),

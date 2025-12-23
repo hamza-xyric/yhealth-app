@@ -78,7 +78,7 @@ Enable seamless, automatic health data synchronization from multiple wearable de
 **OAuth 2.0 + PKCE (RFC 7636):**
 - All integrations use Authorization Code flow with PKCE for mobile security
 - Short-lived access tokens (1-2 hours), refresh token rotation
-- Tokens stored server-side only, encrypted with Azure Key Vault Managed HSM
+- Tokens stored server-side only, encrypted with AWS Secrets Manager Managed HSM
 - No token material on device or in logs
 
 **Adaptive Sync Strategy:**
@@ -219,13 +219,13 @@ As an **Optimization Enthusiast** (P3), I want yHealth to automatically sync my 
      "client_secret": "[CLIENT_SECRET]"
    }
    ```
-7. Store access/refresh tokens server-side with envelope encryption (Azure Key Vault)
+7. Store access/refresh tokens server-side with envelope encryption (AWS Secrets Manager)
 
 **Token Management:**
 - Access token lifetime: ~1 hour (typical OAuth standard)
 - Refresh token: Long-lived (months), requires `offline` scope
 - Refresh flow: Automatic when access token expires
-- Storage: Envelope-encrypted in database (Azure Key Vault Managed HSM)
+- Storage: Envelope-encrypted in database (AWS Secrets Manager Managed HSM)
 - Rotation: Refresh tokens rotated on use (detect reuse = revoke)
 - Revocation: User disconnects = revoke tokens + delete from WHOOP
 
@@ -459,11 +459,11 @@ WHOOP Workout → yHealth Activity:
 
 - [ ] OAuth 2.0 + PKCE flow completes successfully on iOS and Android
 - [ ] All 7 WHOOP scopes granted and stored with user consent
-- [ ] Access/refresh tokens encrypted with Azure Key Vault Managed HSM
+- [ ] Access/refresh tokens encrypted with AWS Secrets Manager Managed HSM
 - [ ] Backfill pulls 90 days of recovery, sleep, workout, cycle data on first connect
 - [ ] Ongoing sync runs every 15-60 minutes based on user activity
 - [ ] Data normalized to yHealth schema and stored in PostgreSQL + TimescaleDB
-- [ ] Raw WHOOP JSON archived in encrypted blob storage (S3/Azure Blob)
+- [ ] Raw WHOOP JSON archived in encrypted blob storage (S3)
 - [ ] Recovery score, HRV, RHR integrated into Physical Recovery Score (F5.3)
 - [ ] Sleep data powers sleep tracking UI (F5.2) and sleep quality insights
 - [ ] Strain scores feed into workout recommendations (F5.5) and load management (F5.6)
@@ -500,9 +500,9 @@ WHOOP Workout → yHealth Activity:
 - **E5 (Fitness Pillar):** All fitness features consume WHOOP data
 - **E8 (Cross-Domain Intelligence):** WHOOP data in correlation engine
 - **E10 (Analytics Dashboard):** WHOOP metrics visualized
-- **Azure Key Vault Managed HSM:** Token encryption
+- **AWS Secrets Manager Managed HSM:** Token encryption
 - **PostgreSQL + TimescaleDB:** Normalized data storage
-- **Azure Blob Storage:** Raw data archival
+- **AWS S3:** Raw data archival
 
 ### MVP Status
 [X] MVP Core (Tier 1 - Critical)
@@ -1008,7 +1008,7 @@ https://www.googleapis.com/auth/fitness.sleep.read
 - Access token lifetime: 1 hour (Google standard)
 - Refresh token: Long-lived (until revoked)
 - Refresh flow: Automatic on expiry
-- Storage: Envelope-encrypted (Azure Key Vault Managed HSM)
+- Storage: Envelope-encrypted (AWS Secrets Manager Managed HSM)
 - Revocation: User disconnects = revoke tokens from Google
 
 ### Google Fit REST API Endpoints
@@ -1317,7 +1317,7 @@ yHealth Normalized:
 
 - [ ] OAuth 2.0 + PKCE flow completes successfully on Android and iOS (if Fit app installed)
 - [ ] All Google Fit scopes granted and stored with user consent
-- [ ] Access/refresh tokens encrypted with Azure Key Vault Managed HSM
+- [ ] Access/refresh tokens encrypted with AWS Secrets Manager Managed HSM
 - [ ] Backfill pulls 90 days of steps, heart rate, activities, sleep on first connect
 - [ ] Ongoing sync runs every 30-120 minutes based on user activity
 - [ ] Data normalized to yHealth schema and stored in PostgreSQL + TimescaleDB
@@ -1361,7 +1361,7 @@ yHealth Normalized:
 - **E8 (Cross-Domain Intelligence):** Google Fit data in correlation engine
 - **E10 (Analytics Dashboard):** Visualizes Google Fit metrics
 - **yHealth Backend API:** REST API endpoints for Google Fit sync
-- **Azure Key Vault:** Token encryption
+- **AWS Secrets Manager:** Token encryption
 - **Google Cloud Project:** OAuth client credentials, quota management
 
 ### MVP Status
@@ -1477,7 +1477,7 @@ nutrition - Food logs (if user logs in Fitbit app)
 - Access token lifetime: 8 hours (Fitbit standard)
 - Refresh token: Valid until revoked
 - Refresh flow: Automatic on expiry
-- Storage: Envelope-encrypted (Azure Key Vault)
+- Storage: Envelope-encrypted (AWS Secrets Manager)
 - Revocation: User disconnects = revoke from Fitbit
 
 ### Fitbit Web API Endpoints
@@ -1818,7 +1818,7 @@ yHealth Normalized:
 
 - [ ] OAuth 2.0 + PKCE flow completes successfully on iOS and Android
 - [ ] All Fitbit scopes granted and stored with user consent
-- [ ] Access/refresh tokens encrypted with Azure Key Vault Managed HSM
+- [ ] Access/refresh tokens encrypted with AWS Secrets Manager Managed HSM
 - [ ] Backfill pulls 90 days of activity, sleep, heart rate, weight on first connect
 - [ ] Ongoing sync runs every 30-120 minutes based on user activity
 - [ ] Data normalized to yHealth schema and stored in PostgreSQL + TimescaleDB
@@ -1858,7 +1858,7 @@ yHealth Normalized:
 - **E5 (Fitness Pillar):** Consumes Fitbit activity and sleep data
 - **E8 (Cross-Domain Intelligence):** Fitbit data in correlation engine
 - **E10 (Analytics Dashboard):** Visualizes Fitbit metrics
-- **Azure Key Vault:** Token encryption
+- **AWS Secrets Manager:** Token encryption
 - **Fitbit Developer Account:** OAuth client credentials
 
 ### MVP Status
@@ -1963,7 +1963,7 @@ profile - User profile (age, gender, height)
 **Token Management:**
 - Access token lifetime: Long-lived (Garmin tokens don't expire unless revoked)
 - No refresh token required (OAuth 1.0a model)
-- Storage: Envelope-encrypted (Azure Key Vault)
+- Storage: Envelope-encrypted (AWS Secrets Manager)
 - Revocation: User disconnects = revoke from Garmin
 
 ### Garmin Health API Endpoints
@@ -2361,7 +2361,7 @@ yHealth Normalized (Body Battery):
 
 - [ ] OAuth 1.0a or 2.0 flow completes successfully on iOS and Android
 - [ ] All Garmin scopes granted and stored with user consent
-- [ ] Access tokens encrypted with Azure Key Vault Managed HSM
+- [ ] Access tokens encrypted with AWS Secrets Manager Managed HSM
 - [ ] Backfill pulls 90 days of dailies, activities, sleep, stress/Body Battery on first connect
 - [ ] Ongoing sync: Daily polling or webhook-based real-time updates
 - [ ] Data normalized to yHealth schema and stored in PostgreSQL + TimescaleDB
@@ -2409,7 +2409,7 @@ yHealth Normalized (Body Battery):
 - **E7 (Wellbeing Pillar):** Uses Body Battery and stress data
 - **E8 (Cross-Domain Intelligence):** Garmin data in correlation engine
 - **E10 (Analytics Dashboard):** Visualizes Garmin metrics
-- **Azure Key Vault:** Token encryption
+- **AWS Secrets Manager:** Token encryption
 - **Garmin Developer Account:** OAuth credentials, webhook configuration
 
 ### MVP Status
@@ -2542,7 +2542,7 @@ temperature - Temperature data
 - Access token lifetime: 1 hour
 - Refresh token: Long-lived (until revoked)
 - Refresh flow: Automatic on expiry
-- Storage: Envelope-encrypted (Azure Key Vault)
+- Storage: Envelope-encrypted (AWS Secrets Manager)
 - Revocation: User disconnects = revoke from Oura
 
 ### Oura API v2 Endpoints
@@ -2951,7 +2951,7 @@ yHealth Normalized:
 
 - [ ] OAuth 2.0 + PKCE flow completes successfully on iOS and Android
 - [ ] All Oura scopes granted and stored with user consent
-- [ ] Access/refresh tokens encrypted with Azure Key Vault Managed HSM
+- [ ] Access/refresh tokens encrypted with AWS Secrets Manager Managed HSM
 - [ ] Backfill pulls 90 days of sleep, readiness, activity, heart rate on first connect
 - [ ] Ongoing sync runs every 30-120 minutes based on user activity
 - [ ] Data normalized to yHealth schema and stored in PostgreSQL + TimescaleDB
@@ -2999,7 +2999,7 @@ yHealth Normalized:
 - **E7 (Wellbeing Pillar):** Readiness and sleep quality inform wellbeing insights
 - **E8 (Cross-Domain Intelligence):** Oura data is critical for sleep-based correlations
 - **E10 (Analytics Dashboard):** Visualizes Oura metrics prominently
-- **Azure Key Vault:** Token encryption
+- **AWS Secrets Manager:** Token encryption
 - **Oura Developer Account:** OAuth credentials
 
 ### MVP Status
@@ -3238,7 +3238,7 @@ Generic sleep tracking apps integration (Sleep Cycle, Pillow, Sleep as Android) 
 
 **Compliance & Security (All Tiers):**
 - [ ] All data treated as PHI/ePHI (HIPAA) and sensitive personal data (GDPR)
-- [ ] Tokens encrypted with Azure Key Vault Managed HSM
+- [ ] Tokens encrypted with AWS Secrets Manager Managed HSM
 - [ ] Raw data archived in encrypted regional blob storage
 - [ ] Field-level encryption for sensitive columns (HR, sleep, mood)
 - [ ] DSR-ready: Export and deletion propagate across all storage layers

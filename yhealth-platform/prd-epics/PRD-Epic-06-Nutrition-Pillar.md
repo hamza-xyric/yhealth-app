@@ -1496,7 +1496,7 @@ GET    /api/v1/nutrition/emotional-eating/reports  # Get monthly report
 | Dependency | Type | Risk Level | Mitigation |
 |------------|------|------------|------------|
 | **Nutritionix API** | Critical | Medium | Contract SLA, fallback to custom database, cache common foods |
-| **Photo Recognition Model** | Critical | Medium | Multiple model options (Azure, Google, custom), graceful degradation to manual |
+| **Photo Recognition Model** | Critical | Medium | Multiple model options (Claude Vision, AWS Rekognition, custom), graceful degradation to manual |
 | **Wellbeing Pillar (E7)** | High | Low | Emotional eating works standalone, enhanced with E7 data |
 | **Cross-Domain Intelligence (E8)** | High | Low | Basic insights work without E8, deep correlations require it |
 

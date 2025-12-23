@@ -180,7 +180,7 @@ As a **Holistic Health Seeker** (P1), I want to chat with my AI coach on WhatsAp
 
 ### Dependencies
 - **WhatsApp Business API:** Message sending/receiving, 24-hour window policy
-- **Azure OpenAI:** Conversational AI backend (ADR-002)
+- **Claude/DeepSeek:** Conversational AI backend (ADR-002)
 - **E8 (Cross-Domain Intelligence):** Insight generation engine
 - **E5, E6, E7 (All Pillars):** Data sources for personalized responses
 - **E4 (Mobile App):** Conversation history sync
@@ -248,9 +248,9 @@ WhatsApp Photo Received
     ↓
 Image Preprocessing (resize, normalize)
     ↓
-Azure Computer Vision API → Detect objects (food items)
+Claude Vision API → Detect objects (food items)
     ↓
-Azure OpenAI Vision Model → Identify ingredients, estimate portions
+Claude/DeepSeek Vision Model → Identify ingredients, estimate portions
     ↓
 Nutrition Database Lookup (Nutritionix API) → Calorie/macro values
     ↓
@@ -282,8 +282,8 @@ User Confirmation → Log to Nutrition Pillar
 
 ### Dependencies
 - **WhatsApp Business API:** Media message handling, photo download
-- **Azure Computer Vision API:** Object detection in images
-- **Azure OpenAI Vision Model:** Food identification and portion estimation
+- **Claude Vision API:** Object detection in images
+- **Claude/DeepSeek Vision Model:** Food identification and portion estimation
 - **Nutritionix API:** Nutrition database for calorie/macro lookup
 - **E6 (Nutrition Pillar):** Meal logging endpoint
 - **Cloud Storage:** Secure image storage (encrypted, time-limited retention)
@@ -351,11 +351,11 @@ Audio File Downloaded (OGG/AAC format)
     ↓
 Audio Quality Check (duration, noise level)
     ↓
-Azure Speech-to-Text API → Transcription
+AWS Transcribe API → Transcription
     ↓
 Confidence Scoring (transcription quality)
     ↓
-Sentiment Analysis (Azure Text Analytics)
+Sentiment Analysis (AWS Comprehend)
     ↓
 Emotion Detection (tone: stressed, happy, tired, neutral, etc.)
     ↓
@@ -395,8 +395,8 @@ Send WhatsApp Reply + Log Relevant Data (mood, activities, etc.)
 
 ### Dependencies
 - **WhatsApp Business API:** Voice message media handling
-- **Azure Speech-to-Text API:** Audio transcription
-- **Azure Text Analytics API:** Sentiment analysis
+- **AWS Transcribe API:** Audio transcription
+- **AWS Comprehend API:** Sentiment analysis
 - **E7 (Wellbeing Pillar):** Mood/stress logging endpoint
 - **E2 (Voice Coaching):** Potential escalation to live voice call
 - **Cloud Storage:** Secure audio storage (encrypted, time-limited)
@@ -698,7 +698,7 @@ As an **Optimization Enthusiast** (P3), I want my conversations and data to sync
 ```
 User Action (Any Channel)
     ↓
-Central Event Bus (Azure Service Bus)
+Central Event Bus (AWS SQS/SNS)
     ↓
 Event Logged to Database (PostgreSQL)
     ↓
@@ -764,7 +764,7 @@ Sync Intervals:
 - Cross-pillar correlations accessible on all channels
 
 ### Dependencies
-- **Event-Driven Architecture:** Azure Service Bus for message routing (ADR-001)
+- **Event-Driven Architecture:** AWS SQS/SNS for message routing (ADR-001)
 - **Database:** PostgreSQL for conversation history, sync state
 - **WhatsApp Business API:** Webhook for incoming messages, API for outgoing
 - **E2 (Voice Coaching):** Voice session context management

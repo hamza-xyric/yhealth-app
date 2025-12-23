@@ -6,6 +6,10 @@ import integrationRoutes from './integration.routes.js';
 import preferencesRoutes from './preferences.routes.js';
 import planRoutes from './plan.routes.js';
 import uploadRoutes from './upload.routes.js';
+import statsRoutes from './stats.routes.js';
+import activityRoutes from './activity.routes.js';
+import achievementsRoutes from './achievements.routes.js';
+import notificationsRoutes from './notifications.routes.js';
 import { env } from '../config/env.config.js';
 
 const router = Router();
@@ -26,6 +30,10 @@ router.get('/', (_req, res) => {
       preferences: '/api/preferences',
       plans: '/api/plans',
       upload: '/api/upload',
+      stats: '/api/stats',
+      activity: '/api/activity',
+      achievements: '/api/achievements',
+      notifications: '/api/notifications',
     },
   });
 });
@@ -50,5 +58,17 @@ router.use('/plans', planRoutes);
 
 // File upload routes
 router.use('/upload', uploadRoutes);
+
+// Stats routes (Dashboard stats, streaks, health metrics)
+router.use('/stats', statsRoutes);
+
+// Activity routes (Activity logs, stats, calendar)
+router.use('/activity', activityRoutes);
+
+// Achievements routes
+router.use('/achievements', achievementsRoutes);
+
+// Notifications routes
+router.use('/notifications', notificationsRoutes);
 
 export default router;

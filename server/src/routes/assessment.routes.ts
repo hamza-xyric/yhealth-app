@@ -10,6 +10,7 @@ import {
   goalCommitmentSchema,
   acceptSuggestedGoalsSchema,
   updateGoalSchema,
+  deleteGoalsSchema,
 } from '../validators/assessment.validator.js';
 import assessmentController from '../controllers/assessment.controller.js';
 
@@ -111,6 +112,19 @@ router.patch(
   '/goals/:goalId',
   validate(updateGoalSchema),
   assessmentController.updateGoal
+);
+
+// Delete single goal
+router.delete(
+  '/goals/:goalId',
+  assessmentController.deleteGoal
+);
+
+// Delete multiple goals (bulk)
+router.delete(
+  '/goals',
+  validate(deleteGoalsSchema),
+  assessmentController.deleteGoals
 );
 
 // ============================================

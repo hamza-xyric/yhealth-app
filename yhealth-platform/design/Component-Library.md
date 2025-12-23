@@ -1,6 +1,6 @@
 # yHealth Component Library
 
-> Specification for UI components aligned with shadcn/ui and Tailwind CSS.
+> Specification for UI components aligned with shadcn/ui and Tailwind CSS, featuring conversation-first patterns and character components.
 
 ---
 
@@ -8,11 +8,12 @@
 
 ### Design Principles
 
-1. **shadcn/ui Foundation**: Build on top of shadcn/ui primitives.
-2. **Accessibility First**: WCAG 2.1 AA compliance built-in.
-3. **Dark Mode Primary**: All components designed for dark mode first.
-4. **Pillar-Aware**: Components support fitness, nutrition, wellbeing color variants.
-5. **Consistent Patterns**: Predictable behavior across the application.
+1. **Conversation-First**: Chat and input components are primary, not secondary.
+2. **Character-Driven**: Sage and pillar creatures are reusable components with states.
+3. **Playful Interactions**: Components celebrate, react, and feel alive.
+4. **shadcn/ui Foundation**: Build on top of shadcn/ui primitives.
+5. **Accessibility First**: WCAG 2.1 AA compliance built-in.
+6. **Dark Mode Primary**: All components designed for dark mode first.
 
 ---
 
@@ -522,6 +523,411 @@ Carbs  ████████░░░░░  156g / 200g
 
 ---
 
+## Conversation UI Components
+
+### Chat Bubble
+
+The primary unit of conversation. User messages and AI messages have distinct styles.
+
+#### User Message Bubble
+
+```
+                    ┌─────────────────────┐
+                    │ I'm feeling tired   │
+                    │ today but still     │
+                    │ managed a 20min     │
+                    │ walk                │
+                    └─────────────────────┘
+                                    12:34 PM
+```
+
+**Spec:**
+- Alignment: Right
+- Background: `primary-600`
+- Text: `foreground`
+- Border radius: 16px (top-left, top-right, bottom-left), 4px (bottom-right)
+- Padding: 12px 16px
+- Max width: 80%
+- Timestamp: Below, right-aligned, `text-tertiary`
+
+#### AI Message Bubble
+
+```
+    ┌──────────────────────────────────┐
+    │ That's great! Even a short walk  │
+    │ counts. How's your energy now?   │
+    └──────────────────────────────────┘
+    12:35 PM
+```
+
+**Spec:**
+- Alignment: Left
+- Background: `surface-elevated-2`
+- Text: `foreground`
+- Border radius: 4px (top-left), 16px (top-right, bottom-left, bottom-right)
+- Padding: 12px 16px
+- Max width: 80%
+- Optional: Sage avatar (32px) to the left
+
+```tsx
+interface ChatBubbleProps {
+  type: 'user' | 'ai';
+  content: string;
+  timestamp: Date;
+  showAvatar?: boolean; // for AI messages
+  avatarExpression?: 'happy' | 'curious' | 'supportive' | 'celebratory';
+}
+```
+
+---
+
+### MCQ Chips
+
+Quick-response options presented as tappable chips.
+
+```
+┌──────────────────────────────────────────┐
+│ How's your energy right now?             │
+│                                          │
+│ [🔥 Great]  [😐 Okay]  [😩 Low]  [📝]   │
+└──────────────────────────────────────────┘
+```
+
+**Spec:**
+- Container: Horizontal scroll or wrap
+- Chip height: 40px
+- Chip padding: 10px 16px
+- Chip background: `surface-elevated-2`
+- Chip border: 1px `border`
+- Border radius: 20px (pill shape)
+- Active/selected: `primary-500` background
+- Expand icon: `📝` or `+` to open text input
+
+**States:**
+| State | Background | Border |
+|-------|------------|--------|
+| Default | `surface-elevated-2` | `border` |
+| Hover | `surface-elevated-3` | `border-strong` |
+| Selected | `primary-500` | `primary-600` |
+| Disabled | `muted` | `border-subtle` |
+
+```tsx
+interface MCQChipsProps {
+  options: { label: string; emoji?: string; value: string }[];
+  onSelect: (value: string) => void;
+  selectedValue?: string;
+  allowExpand?: boolean; // shows expand icon for free text
+  onExpand?: () => void;
+}
+```
+
+---
+
+### Expandable Input
+
+Combined input that shows MCQ chips by default, expands to full input on tap.
+
+#### Collapsed State
+
+```
+┌──────────────────────────────────────────┐
+│ [Option 1]  [Option 2]  [Option 3]  [+]  │
+└──────────────────────────────────────────┘
+```
+
+#### Expanded State
+
+```
+┌──────────────────────────────────────────┐
+│ ┌────────────────────────────────────┐   │
+│ │ Type your thoughts...              │   │
+│ │                                    │   │
+│ │                                    │   │
+│ └────────────────────────────────────┘   │
+│                                          │
+│ [🎤 Voice]               [Send ▶]       │
+└──────────────────────────────────────────┘
+```
+
+**Spec:**
+- Transition: Smooth expansion (300ms ease-out)
+- Text area: Multi-line, auto-grow
+- Min height expanded: 120px
+- Voice button: 44×44px, `primary-500`
+- Send button: 44×44px, `primary-600`
+
+---
+
+### Voice Input Component
+
+For recording voice notes.
+
+#### Idle State
+
+```
+┌──────────────────────────────────────────┐
+│ 💬 Type or speak...              [🎤]   │
+└──────────────────────────────────────────┘
+```
+
+#### Recording State
+
+```
+┌──────────────────────────────────────────┐
+│                                          │
+│         🎤 Recording... 0:12             │
+│         ◉◉◉◉◉◉◉◉◉◉◉◉                     │
+│                                          │
+│ [Cancel]                      [Done ✓]   │
+└──────────────────────────────────────────┘
+```
+
+**Spec:**
+- Recording indicator: Pulsing red dot
+- Waveform: Real-time audio visualization
+- Timer: MM:SS format
+- Cancel: Ghost button
+- Done: Primary button
+
+#### Playback State (after recording)
+
+```
+┌──────────────────────────────────────────┐
+│ [▶️] ═══════●═══════════ 0:12 / 0:23     │
+│                                [✕] [✓]   │
+└──────────────────────────────────────────┘
+```
+
+---
+
+### Typing Indicator
+
+Shows when AI is generating a response.
+
+```
+    ┌─────────────────────┐
+    │  ●  ●  ●            │
+    └─────────────────────┘
+```
+
+**Spec:**
+- Three dots, staggered bounce animation
+- Dot size: 8px
+- Dot color: `muted-foreground`
+- Animation: 1.4s infinite ease-in-out, 0.2s delay between dots
+- Shows Sage avatar (32px, thinking expression) to the left
+
+---
+
+### AI Question Card
+
+Prominent card for AI-initiated questions.
+
+```
+┌──────────────────────────────────────────┐
+│ ┌────┐                                   │
+│ │ 🤖 │  I noticed you slept better       │
+│ └────┘  last week. What was different?   │
+│                                          │
+│ [🛏️ Earlier bedtime]  [📵 Less screen]  │
+│ [🧘 Relaxation]  [📝 Tell me more]       │
+└──────────────────────────────────────────┘
+```
+
+**Spec:**
+- Background: `surface-elevated-1` with subtle gradient
+- Border: 1px `primary-500/30`
+- Border radius: 16px
+- Padding: 20px
+- Sage avatar: 48px, curious expression
+- MCQ chips below text
+
+---
+
+## Character Components
+
+### Sage (AI Coach Avatar)
+
+The illustrated coach character with multiple expression states.
+
+#### Avatar Sizes
+
+| Context | Size | Usage |
+|---------|------|-------|
+| `xs` | 24px | Inline mentions |
+| `sm` | 32px | Chat bubbles |
+| `md` | 48px | AI question cards |
+| `lg` | 64px | Empty states |
+| `xl` | 120px | Achievements, celebrations |
+
+#### Expression States
+
+| Expression | When Used | Animation |
+|------------|-----------|-----------|
+| `happy` | Positive messages, greetings | Subtle bounce |
+| `curious` | Questions, prompts | Head tilt, blink |
+| `supportive` | Struggles, empathy | Soft glow |
+| `celebratory` | Achievements, wins | Jump, confetti |
+| `thinking` | Processing, loading | Look up, dots |
+| `listening` | Voice input active | Sound waves |
+| `concerned` | Health alerts | Gentle pulse |
+
+```tsx
+interface SageAvatarProps {
+  size: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  expression: 'happy' | 'curious' | 'supportive' | 'celebratory' | 'thinking' | 'listening' | 'concerned';
+  animate?: boolean;
+}
+```
+
+---
+
+### Pillar Creatures
+
+Animated creatures representing each health pillar.
+
+#### Ember (Fitness)
+
+```
+     ╱ ╲
+    ╱ 🔥 ╲
+   ╱  78  ╲
+    Fitness
+```
+
+**States by Score:**
+| Score | Visual State | Size | Glow |
+|-------|--------------|------|------|
+| 80-100 | Blazing | 110% | Strong |
+| 60-79 | Steady | 100% | Medium |
+| 40-59 | Dimming | 80% | Subtle |
+| 0-39 | Ember | 60% | Minimal |
+
+**Animations:**
+- Idle: Gentle flicker
+- Tap: Burst + size pulse
+- Score increase: Dance with sparks
+- Score decrease: Sad flicker
+
+#### Sprout (Nutrition)
+
+```
+     🌿
+    ╱ ╲
+   ╱ 65 ╲
+  Nutrition
+```
+
+**States by Score:**
+| Score | Visual State | Size | Leaves |
+|-------|--------------|------|--------|
+| 80-100 | Flourishing | 110% | Full bloom |
+| 60-79 | Growing | 100% | Multiple |
+| 40-59 | Wilting | 80% | Droopy |
+| 0-39 | Seedling | 60% | Sprout |
+
+**Animations:**
+- Idle: Gentle sway
+- Tap: Perk up + rustle
+- Score increase: Bloom + sparkles
+- Score decrease: Slight droop
+
+#### Nimbus (Wellbeing)
+
+```
+    ☁️
+   ╱   ╲
+  ╱ 82  ╲
+ Wellbeing
+```
+
+**States by Score:**
+| Score | Visual State | Size | Effect |
+|-------|--------------|------|--------|
+| 80-100 | Serene | 110% | Rainbow hint |
+| 60-79 | Balanced | 100% | Calm |
+| 40-59 | Cloudy | 80% | Gray edges |
+| 0-39 | Stormy | 60% | Light rain |
+
+**Animations:**
+- Idle: Float/bob
+- Tap: Soft pulse + sparkle rain
+- Score increase: Rainbow flash
+- Score decrease: Light rain
+
+```tsx
+interface PillarCreatureProps {
+  pillar: 'fitness' | 'nutrition' | 'wellbeing';
+  score: number; // 0-100
+  size?: 'sm' | 'md' | 'lg';
+  showLabel?: boolean;
+  showScore?: boolean;
+  onTap?: () => void;
+}
+```
+
+---
+
+## Celebration Components
+
+### Confetti Burst
+
+Triggered on achievements and milestones.
+
+**Spec:**
+- Particle count: 50-100
+- Colors: `confetti-gold`, `confetti-coral`, `confetti-teal`, `confetti-purple`, `confetti-pink`
+- Duration: 2-3 seconds
+- Shape: Mix of rectangles and circles
+- Physics: Gravity + slight rotation
+
+```tsx
+interface ConfettiProps {
+  trigger: boolean;
+  intensity?: 'subtle' | 'medium' | 'max';
+  colors?: string[];
+  duration?: number;
+}
+```
+
+### Achievement Badge
+
+Unlocked achievements and milestones.
+
+```
+    ╭──────────────────────╮
+    │      🏆             │
+    │   7-Day Streak!      │
+    │                      │
+    │ You've logged meals  │
+    │ for a whole week     │
+    │                      │
+    │   [Share] [Close]    │
+    ╰──────────────────────╯
+```
+
+**Spec:**
+- Background: `card` with celebration glow
+- Border: Gold gradient for special achievements
+- Animation: Scale in + confetti
+- Sage expression: `celebratory`
+
+### Streak Counter
+
+Displays current streaks with animation.
+
+```
+🔥 14 day streak!
+```
+
+**Spec:**
+- Icon: Flame with subtle animation
+- Number: Bold, large
+- Animation: Pulse on increment
+- Background glow: Subtle streak color
+
+---
+
 ## Component States Summary
 
 ### Interactive States
@@ -595,4 +1001,4 @@ All interactive components must show visible focus for keyboard navigation:
 
 ---
 
-*yHealth Component Library v1.0 | Built on shadcn/ui, optimized for dark mode*
+*yHealth Component Library v2.0 | Conversation-First with Character Components*

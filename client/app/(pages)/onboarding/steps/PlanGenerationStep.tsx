@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Sparkles,
   Check,
@@ -15,9 +15,14 @@ import {
   ChevronRight,
   Play,
   Award,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { useOnboarding } from "../OnboardingContext";
+import { useOnboardingApi } from "../hooks/useOnboardingApi";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext";
+import { SuccessModal } from "@/components/common/success-modal";
 
 interface GenerationPhase {
   id: string;
@@ -138,41 +143,149 @@ const mockPlan = {
 
 export function PlanGenerationStep() {
   const { preferences, confirmedGoals, setGeneratedPlan, acceptPlan } = useOnboarding();
+  const { generatePlan, completeOnboarding, isLoading, error: apiError } = useOnboardingApi();
+  const { refreshUser } = useAuth();
   const router = useRouter();
 
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [isGenerating, setIsGenerating] = useState(true);
   const [planReady, setPlanReady] = useState(false);
   const [showPlan, setShowPlan] = useState(false);
+  const [generatedPlanData, setGeneratedPlanData] = useState<typeof mockPlan | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Simulate plan generation
-  useEffect(() => {
-    if (!isGenerating) return;
-
+  // Generate plan with API call
+  const runPlanGeneration = useCallback(async () => {
+    setIsGenerating(true);
+    setError(null);
     let phaseIndex = 0;
-    const runPhases = async () => {
-      for (const phase of generationPhases) {
-        setCurrentPhaseIndex(phaseIndex);
-        await new Promise((resolve) => setTimeout(resolve, phase.duration));
-        phaseIndex++;
+
+    try {
+      // Run visual phases while making API call
+      const phasePromise = (async () => {
+        for (const phase of generationPhases) {
+          setCurrentPhaseIndex(phaseIndex);
+          await new Promise((resolve) => setTimeout(resolve, phase.duration));
+          phaseIndex++;
+        }
+      })();
+
+      // Call API to generate plan
+      const primaryGoal = confirmedGoals.find(g => g.isPrimary) || confirmedGoals[0];
+      const apiResult = await generatePlan(primaryGoal?.id);
+
+      // Wait for visual phases to complete
+      await phasePromise;
+
+      // Use API result or fallback to mock
+      if (apiResult?.plan) {
+        // Type for API activity
+        interface ApiActivity {
+          id: string;
+          type: string;
+          title: string;
+          description: string;
+          days?: string[];
+          preferredTime?: string;
+        }
+
+        const apiPlan = apiResult.plan as {
+          name?: string;
+          description?: string;
+          activities?: ApiActivity[];
+          weeklyFocuses?: WeeklyFocus[];
+        };
+
+        const planData = {
+          ...mockPlan,
+          name: apiPlan.name || mockPlan.name,
+          description: apiPlan.description || mockPlan.description,
+          activities: apiPlan.activities && apiPlan.activities.length > 0
+            ? apiPlan.activities.map((a) => ({
+                id: a.id,
+                type: a.type,
+                title: a.title,
+                description: a.description,
+                days: a.days || ["Daily"],
+                time: a.preferredTime || "9:00 AM",
+                icon: getActivityIcon(a.type),
+              }))
+            : mockPlan.activities,
+          weeklyFocuses: apiPlan.weeklyFocuses && apiPlan.weeklyFocuses.length > 0
+            ? apiPlan.weeklyFocuses
+            : mockPlan.weeklyFocuses,
+        };
+        setGeneratedPlanData(planData);
+        setGeneratedPlan(planData);
+      } else {
+        // Fallback to mock plan if API doesn't return data
+        setGeneratedPlanData(mockPlan);
+        setGeneratedPlan(mockPlan);
       }
 
-      // Generation complete
       setIsGenerating(false);
-      setGeneratedPlan(mockPlan);
       setPlanReady(true);
-
-      // Auto-show plan after a moment
       setTimeout(() => setShowPlan(true), 500);
+    } catch (err) {
+      console.error("Plan generation error:", err);
+      // On error, still show mock plan to not block user
+      setGeneratedPlanData(mockPlan);
+      setGeneratedPlan(mockPlan);
+      setIsGenerating(false);
+      setPlanReady(true);
+      setTimeout(() => setShowPlan(true), 500);
+    }
+  }, [confirmedGoals, generatePlan, setGeneratedPlan]);
+
+  // Start plan generation on mount
+  useEffect(() => {
+    runPlanGeneration();
+  }, [runPlanGeneration]);
+
+  // Helper function to get activity icon
+  const getActivityIcon = (type: string) => {
+    const icons: Record<string, React.ReactNode> = {
+      workout: <Dumbbell className="w-5 h-5" />,
+      nutrition: <Utensils className="w-5 h-5" />,
+      meal: <Utensils className="w-5 h-5" />,
+      sleep_routine: <Moon className="w-5 h-5" />,
+      wellbeing: <Moon className="w-5 h-5" />,
+      mindfulness: <Brain className="w-5 h-5" />,
+      check_in: <Brain className="w-5 h-5" />,
     };
-
-    runPhases();
-  }, [isGenerating, setGeneratedPlan]);
-
-  const handleStartPlan = () => {
-    acceptPlan();
-    router.push("/dashboard");
+    return icons[type] || <Calendar className="w-5 h-5" />;
   };
+
+  const handleStartPlan = async () => {
+    setIsStarting(true);
+    setError(null);
+
+    try {
+      // Call API to complete onboarding - this updates user.onboarding_status to 'completed'
+      await completeOnboarding();
+
+      // Update local state
+      acceptPlan();
+
+      // Refresh user data to get updated onboarding status
+      await refreshUser();
+
+      // Show success modal
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error("Failed to complete onboarding:", err);
+      setError("Failed to start your plan. Please try again.");
+      setIsStarting(false);
+    }
+  };
+
+  // Handle success modal close - navigate to dashboard
+  const handleSuccessModalClose = useCallback(() => {
+    setShowSuccessModal(false);
+    router.push("/dashboard");
+  }, [router]);
 
   // Get coach message based on style
   const getCoachMessage = () => {
@@ -201,10 +314,12 @@ export function PlanGenerationStep() {
         ) : showPlan ? (
           <PlanReadyView
             key="plan"
-            plan={mockPlan}
+            plan={generatedPlanData || mockPlan}
             goals={confirmedGoals}
             coachMessage={getCoachMessage()}
             onStartPlan={handleStartPlan}
+            isStarting={isStarting}
+            error={error}
           />
         ) : (
           <motion.div
@@ -218,6 +333,16 @@ export function PlanGenerationStep() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Success Modal for Onboarding Completion */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        type="onboarding"
+        title="You're All Set!"
+        message="Your personalized health journey begins now. Let's make great things happen together!"
+        autoCloseDelay={3000}
+      />
     </div>
   );
 }
@@ -392,11 +517,15 @@ function PlanReadyView({
   goals,
   coachMessage,
   onStartPlan,
+  isStarting,
+  error,
 }: {
   plan: typeof mockPlan;
   goals: ReturnType<typeof useOnboarding>["confirmedGoals"];
   coachMessage: string;
   onStartPlan: () => void;
+  isStarting: boolean;
+  error: string | null;
 }) {
   return (
     <motion.div
@@ -511,22 +640,45 @@ function PlanReadyView({
         </div>
       </motion.div>
 
+      {/* Error Message */}
+      {error && (
+        <motion.div
+          className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          <p className="text-red-400 text-sm">{error}</p>
+        </motion.div>
+      )}
+
       {/* Start Button */}
       <motion.button
         onClick={onStartPlan}
-        className="w-full py-4 rounded-xl font-bold text-lg
+        disabled={isStarting}
+        className={`w-full py-4 rounded-xl font-bold text-lg
                  bg-gradient-to-r from-emerald-500 to-teal-500 text-white
                  hover:shadow-lg hover:shadow-emerald-500/25 transition-all duration-300
-                 flex items-center justify-center gap-3"
+                 flex items-center justify-center gap-3
+                 ${isStarting ? "opacity-70 cursor-not-allowed" : ""}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9 }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={isStarting ? {} : { scale: 1.02 }}
+        whileTap={isStarting ? {} : { scale: 0.98 }}
       >
-        <Rocket className="w-6 h-6" />
-        Start Your Journey
-        <Play className="w-5 h-5" />
+        {isStarting ? (
+          <>
+            <RefreshCw className="w-6 h-6 animate-spin" />
+            Setting Up Your Plan...
+          </>
+        ) : (
+          <>
+            <Rocket className="w-6 h-6" />
+            Start Your Journey
+            <Play className="w-5 h-5" />
+          </>
+        )}
       </motion.button>
 
       <motion.p

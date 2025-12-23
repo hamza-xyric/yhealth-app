@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { logger } from './logger.service.js';
-import type { AuthProvider } from '@prisma/client';
+import type { AuthProvider } from '../models/index.js';
 
 interface ISocialProfile {
   provider: AuthProvider;

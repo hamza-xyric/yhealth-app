@@ -63,6 +63,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { api, ApiError } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { MainLayout } from "@/components/layout";
 
 // Gender options with icons
 const GENDER_OPTIONS = [
@@ -357,6 +358,7 @@ export default function EditProfilePage() {
   );
 
   return (
+    <MainLayout>
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -553,14 +555,7 @@ export default function EditProfilePage() {
                         size="xl"
                       />
                     </motion.div>
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.6, type: "spring" }}
-                      className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg shadow-primary/30"
-                    >
-                      <Camera className="w-5 h-5 text-white" />
-                    </motion.div>
+                   
                   </div>
                 </div>
               </div>
@@ -790,7 +785,7 @@ export default function EditProfilePage() {
                                 <FormControl>
                                   <SelectTrigger
                                     className={cn(
-                                      "h-12 rounded-xl border-0 bg-muted/50",
+                                      "h-12 w-full rounded-xl border-0 bg-muted/50",
                                       "hover:bg-muted/70 focus:bg-muted/70",
                                       "transition-all duration-300",
                                       "focus:ring-2 focus:ring-primary/50"
@@ -1068,5 +1063,6 @@ export default function EditProfilePage() {
         }
       `}</style>
     </div>
+    </MainLayout>
   );
 }

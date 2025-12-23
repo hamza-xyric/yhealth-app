@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
-import { Prisma } from '@prisma/client';
 import { ApiError } from '../utils/ApiError.js';
 import { logger } from '../services/logger.service.js';
 import { env } from '../config/env.config.js';
@@ -8,6 +7,15 @@ import type { AuthenticatedRequest } from '../types/index.js';
 // JWT errors
 interface JWTError extends Error {
   expiredAt?: Date;
+}
+
+// PostgreSQL error interface
+interface PgError extends Error {
+  code?: string;
+  constraint?: string;
+  detail?: string;
+  table?: string;
+  column?: string;
 }
 
 /**
@@ -19,30 +27,44 @@ function normalizeError(error: Error): ApiError {
     return error;
   }
 
-  // Prisma known request error (validation, unique constraint, etc.)
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  // PostgreSQL errors (from pg client)
+  const pgError = error as PgError;
+  if (pgError.code) {
     // Unique constraint violation
-    if (error.code === 'P2002') {
-      const target = (error.meta?.target as string[])?.join(', ') || 'field';
-      return ApiError.conflict(`${target} already exists`);
+    if (pgError.code === '23505') {
+      const detail = pgError.detail || '';
+      const match = detail.match(/Key \((.+?)\)=/);
+      const field = match ? match[1] : 'field';
+      return ApiError.conflict(`${field} already exists`);
     }
 
-    // Record not found
-    if (error.code === 'P2025') {
-      return ApiError.notFound('Record not found');
-    }
-
-    // Foreign key constraint failed
-    if (error.code === 'P2003') {
+    // Foreign key constraint violation
+    if (pgError.code === '23503') {
       return ApiError.badRequest('Invalid reference');
     }
 
-    return ApiError.badRequest(error.message);
-  }
+    // Not null violation
+    if (pgError.code === '23502') {
+      const column = pgError.column || 'field';
+      return ApiError.badRequest(`${column} is required`);
+    }
 
-  // Prisma validation error
-  if (error instanceof Prisma.PrismaClientValidationError) {
-    return ApiError.badRequest('Invalid data provided');
+    // Check constraint violation
+    if (pgError.code === '23514') {
+      return ApiError.badRequest('Invalid data provided');
+    }
+
+    // Undefined table (relation does not exist)
+    if (pgError.code === '42P01') {
+      logger.error('Database table does not exist', { error: pgError.message });
+      return ApiError.internal('Database configuration error');
+    }
+
+    // Undefined column
+    if (pgError.code === '42703') {
+      logger.error('Database column does not exist', { error: pgError.message });
+      return ApiError.internal('Database configuration error');
+    }
   }
 
   // JWT errors

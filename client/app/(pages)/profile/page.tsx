@@ -34,7 +34,9 @@ import {
   Droplets,
   ArrowUpRight,
   MoreHorizontal,
+  ArrowLeft,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -340,6 +342,7 @@ function StatCard({
 export default function ProfilePage() {
   const { user, isLoading, getInitials, getDisplayName } = useAuth();
   const isHydrated = useHydrated();
+  const router = useRouter();
 
   if (!isHydrated || isLoading) {
     return <ProfileSkeleton />;
@@ -399,6 +402,21 @@ export default function ProfilePage() {
         </div>
 
         <div className="relative container mx-auto px-4 py-8 max-w-6xl">
+          {/* Back Button */}
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mb-4"
+          >
+            <button
+              onClick={() => router.back()}
+              className="group flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+              <span className="text-sm">Back</span>
+            </button>
+          </motion.div>
+
           <motion.div
             variants={containerVariants}
             initial="hidden"

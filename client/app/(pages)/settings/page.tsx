@@ -30,10 +30,12 @@ import {
   Trash2,
   Download,
   LogOut,
+  ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api-client";
+import { MainLayout } from "@/components/layout";
 
 // Types
 interface UserPreferences {
@@ -67,10 +69,15 @@ interface UserPreferences {
 }
 
 interface ConnectedIntegration {
-  id: string;
-  name: string;
-  type: string;
-  connected: boolean;
+  provider: string;
+  displayName: string;
+  description: string;
+  tier: number;
+  dataTypes: string[];
+  syncFrequencyMinutes: number;
+  authType: string;
+  scopes: string[];
+  isConnected: boolean;
   lastSync?: string;
 }
 
@@ -258,31 +265,47 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
-      </div>
+    <MainLayout>
+      <div className="min-h-screen bg-slate-950">
+        {/* Animated Background */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+        </div>
 
-      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  Settings
-                </span>
-              </h1>
-              <p className="text-slate-400 mt-1">
-                Manage your preferences and account
-              </p>
-            </div>
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Back Button */}
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mb-4"
+          >
+            <button
+              onClick={() => router.back()}
+              className="group flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+              <span className="text-sm">Back</span>
+            </button>
+          </motion.div>
+
+          {/* Header */}
+          <motion.header
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                  <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    Settings
+                  </span>
+                </h1>
+                <p className="text-slate-400 mt-1">
+                  Manage your preferences and account
+                </p>
+              </div>
 
             <button
               onClick={savePreferences}
@@ -692,7 +715,7 @@ export default function SettingsPage() {
                   ) : (
                     integrations.map((integration) => (
                       <div
-                        key={integration.id}
+                        key={integration.provider}
                         className="flex items-center justify-between p-4 rounded-xl bg-white/5"
                       >
                         <div className="flex items-center gap-3">
@@ -701,19 +724,28 @@ export default function SettingsPage() {
                           </div>
                           <div>
                             <p className="text-white font-medium">
-                              {integration.name}
+                              {integration.displayName}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {integration.description}
                             </p>
                             {integration.lastSync && (
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-slate-400 mt-1">
                                 Last synced:{" "}
                                 {new Date(integration.lastSync).toLocaleString()}
                               </p>
                             )}
                           </div>
                         </div>
-                        <button className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">
-                          <Unlink className="w-4 h-4" />
-                        </button>
+                        {integration.isConnected ? (
+                          <button className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors">
+                            <Unlink className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button className="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors text-sm font-medium">
+                            Connect
+                          </button>
+                        )}
                       </div>
                     ))
                   )}
@@ -968,7 +1000,8 @@ export default function SettingsPage() {
             )}
           </motion.main>
         </div>
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }
